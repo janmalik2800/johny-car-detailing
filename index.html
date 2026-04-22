@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Johny Car Detailing | Prémiová ochrana laku Loštice</title>
+  <meta name="description" content="Prémiový car detailing v Lošticích. PPF fólie, keramické povlaky, renovace laku. Certifikovaný XPEL a Ceramic Pro instalátor." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- NAVIGATION -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <nav class="nav" id="nav">
+    <div class="nav__logo">
+      <span class="nav__logo-text">JOHNY</span>
+      <span class="nav__logo-sub">CAR DETAILING</span>
+    </div>
+    <div class="nav__links">
+      <a href="#" class="nav__link">PPF Fólie</a>
+      <a href="#" class="nav__link">Leštění</a>
+      <a href="#" class="nav__link">Keramika</a>
+      <a href="#" class="nav__link">Portfolio</a>
+    </div>
+    <div class="nav__cta">
+      <a href="tel:+420123456789" class="nav__phone">
+        <span class="nav__phone-icon">📞</span>
+        <span class="nav__phone-text">+420 123 456 789</span>
+      </a>
+      <a href="#kontakt" class="btn btn--gold">Konzultace</a>
+    </div>
+    <button class="nav__burger" id="navBurger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- HERO — CINEMATIC REVEAL -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section class="hero" id="hero">
+    
+    <!-- Gold particles canvas -->
+    <canvas class="hero__particles" id="heroParticles"></canvas>
+    
+    <!-- Frosted giant text (blurs → clears on scroll) -->
+    <div class="hero__text-layer" id="heroTextLayer">
+      <h1 class="hero__title" id="heroTitle">
+        <span class="hero__title-line hero__title-line--1" data-speed="-2">JOHNY CAR</span>
+        <span class="hero__title-line hero__title-line--2" data-speed="2">DETAILING</span>
+      </h1>
+      <p class="hero__tagline" id="heroTagline">Prémiová ochrana & renovace laku</p>
+    </div>
+    
+    <!-- Expanding video/image container -->
+    <div class="hero__media-wrapper" id="heroMediaWrapper">
+      <div class="hero__media-frame" id="heroMediaFrame">
+        <div class="hero__media-inner" id="heroMediaInner">
+          <!-- Hero image — luxury car in detailing studio -->
+          <img 
+            class="hero__video" 
+            id="heroVideo"
+            src="/hero-car.png"
+            alt="Luxury car with perfect paint finish in professional detailing studio"
+            loading="eager"
+          />
+          <div class="hero__media-overlay" id="heroMediaOverlay"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating parallax text — plain, bold, no labels -->
+    <div class="hero__floaters" id="heroFloaters">
+      <div class="hero__float-text" data-speed="-1.5" data-x="6" data-y="22">
+        <span class="hero__float-heading">PPF Ochranné fólie</span>
+        <span class="hero__float-desc">Neviditelný štít proti kamínkům a škrábancům</span>
+      </div>
+      <div class="hero__float-text" data-speed="1.2" data-x="72" data-y="15">
+        <span class="hero__float-heading">Keramický povlak</span>
+        <span class="hero__float-desc">Ceramic Pro 9H — ochrana a lesk na roky</span>
+      </div>
+      <div class="hero__float-text" data-speed="-0.8" data-x="4" data-y="68">
+        <span class="hero__float-heading">Korekce & renovace laku</span>
+        <span class="hero__float-desc">Hologramy, swirl marks, oxidace — vracíme tovární lesk</span>
+      </div>
+      <div class="hero__float-text" data-speed="1.8" data-x="70" data-y="72">
+        <span class="hero__float-heading">XPEL Certified Instalátor</span>
+        <span class="hero__float-desc">Certifikovaný partner s 10letou zárukou</span>
+      </div>
+    </div>
+
+    <!-- Overlay text that appears when media is fullscreen -->
+    <div class="hero__overlay-text" id="heroOverlayText">
+      <h2 class="hero__overlay-title">Ochrana, kterou si<br />vaše auto <em>zaslouží</em></h2>
+      <p class="hero__overlay-sub">Certifikovaný XPEL & Ceramic Pro instalátor · Loštice</p>
+      <a href="#kontakt" class="btn btn--gold btn--lg hero__overlay-cta">Nezávazná konzultace</a>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="hero__scroll" id="heroScroll">
+      <div class="hero__scroll-line"></div>
+      <span class="hero__scroll-text">Scroll</span>
+    </div>
+
+  </section>
+
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
