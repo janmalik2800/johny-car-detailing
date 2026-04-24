@@ -9,7 +9,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@700&family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   
   <link rel="stylesheet" href="/style.css" />
 </head>
@@ -52,7 +52,7 @@
     
     <!-- Frosted giant text (blurs → clears on scroll) -->
     <div class="hero__text-layer" id="heroTextLayer">
-      <h1 class="hero__title" id="heroTitle">
+      <h1 class="hero__title" id="heroTitle" style="visibility: hidden;">
         <span class="hero__title-line hero__title-line--1" data-speed="-2">JOHNY CAR</span>
         <span class="hero__title-line hero__title-line--2" data-speed="2">DETAILING</span>
       </h1>
@@ -63,36 +63,56 @@
     <div class="hero__media-wrapper" id="heroMediaWrapper">
       <div class="hero__media-frame" id="heroMediaFrame">
         <div class="hero__media-inner" id="heroMediaInner">
-          <!-- Hero image — luxury car in detailing studio -->
+          <!-- Hero image — garage with sunset light -->
           <img 
             class="hero__video" 
             id="heroVideo"
             src="/hero-car.png"
-            alt="Luxury car with perfect paint finish in professional detailing studio"
+            alt="Professional car detailing studio with hexagonal LED lights and open garage door"
             loading="eager"
           />
+          <!-- Garage door overlay — slides up on scroll to reveal the scene -->
+          <div class="hero__garage-door" id="heroGarageDoor">
+            <div class="hero__garage-door-segment"></div>
+            <div class="hero__garage-door-segment"></div>
+            <div class="hero__garage-door-segment"></div>
+            <div class="hero__garage-door-segment"></div>
+            <div class="hero__garage-door-segment"></div>
+          </div>
           <div class="hero__media-overlay" id="heroMediaOverlay"></div>
         </div>
       </div>
     </div>
 
-    <!-- Floating parallax text — plain, bold, no labels -->
+    <!-- Floating parallax text — scattered, organic placement -->
     <div class="hero__floaters" id="heroFloaters">
-      <div class="hero__float-text" data-speed="-1.5" data-x="6" data-y="22">
+      <div class="hero__float-text" data-speed="-1.2" data-x="3" data-y="18">
+        <span class="hero__float-heading">Ceramic Pro 9H</span>
+        <span class="hero__float-desc">Profesionální nanoceramic coating</span>
+      </div>
+      <div class="hero__float-text" data-speed="1.5" data-x="78" data-y="12">
         <span class="hero__float-heading">PPF Ochranné fólie</span>
-        <span class="hero__float-desc">Neviditelný štít proti kamínkům a škrábancům</span>
+        <span class="hero__float-desc">Neviditelný štít proti kamínkům</span>
       </div>
-      <div class="hero__float-text" data-speed="1.2" data-x="72" data-y="15">
-        <span class="hero__float-heading">Keramický povlak</span>
-        <span class="hero__float-desc">Ceramic Pro 9H — ochrana a lesk na roky</span>
+      <div class="hero__float-text" data-speed="-0.6" data-x="88" data-y="45">
+        <span class="hero__float-heading">XPEL Certified</span>
+        <span class="hero__float-desc">10letá záruka na fólie</span>
       </div>
-      <div class="hero__float-text" data-speed="-0.8" data-x="4" data-y="68">
-        <span class="hero__float-heading">Korekce & renovace laku</span>
-        <span class="hero__float-desc">Hologramy, swirl marks, oxidace — vracíme tovární lesk</span>
+      <div class="hero__float-text" data-speed="1.8" data-x="2" data-y="58">
+        <span class="hero__float-heading">Korekce laku</span>
+        <span class="hero__float-desc">Hologramy, swirly — tovární lesk</span>
       </div>
-      <div class="hero__float-text" data-speed="1.8" data-x="70" data-y="72">
-        <span class="hero__float-heading">XPEL Certified Instalátor</span>
-        <span class="hero__float-desc">Certifikovaný partner s 10letou zárukou</span>
+      <div class="hero__float-text" data-speed="-1.0" data-x="82" data-y="74">
+        <span class="hero__float-heading">Interior Detailing</span>
+        <span class="hero__float-desc">Kompletní péče o interiér</span>
+      </div>
+      <div class="hero__float-text" data-speed="0.9" data-x="6" data-y="78">
+        <span class="hero__float-heading">Paint Correction</span>
+        <span class="hero__float-desc">Multi-step leštění bez kompromisů</span>
+      </div>
+      <div class="hero__float-text" data-speed="-1.4" data-x="38" data-y="88">
+        <span class="hero__float-heading">Loštice · Olomoucký kraj</span>
+        <span class="hero__float-desc">Prémiový detailing v regionu</span>
       </div>
     </div>
 
@@ -111,6 +131,21 @@
 
   </section>
 
+
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- SERVICES — INTRO (auto vlevo, nadpis vpravo) -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section class="services" id="services">
+    <div class="services__sticky">
+      <div class="services__intro" id="servicesIntro">
+        <span class="services__intro-tagline">Naše služby</span>
+        <h2 class="services__intro-title">CO PRO VÁS<br/>MŮŽEME<br/>UDĚLAT</h2>
+        <p class="services__intro-desc">Prémiový detailing, který si vaše auto zaslouží.<br/>Od ochrany laku až po kompletní renovaci interiéru.</p>
+        <div class="services__intro-line"></div>
+      </div>
+    </div>
+  </section>
 
   <script type="module" src="/main.js"></script>
 </body>

@@ -6,6 +6,7 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
+import { Car3DEngine } from './car3d.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -196,6 +197,10 @@ function splitTextToChars(element) {
   return chars;
 }
 
+// ══ WAIT FOR FONTS BEFORE SPLITTING TEXT ══
+// Prevents font-swap reflow flash (display:swap causes layout shift)
+document.fonts.ready.then(() => {
+
 // Split both title lines into characters
 const titleLine1 = document.querySelector('.hero__title-line--1');
 const titleLine2 = document.querySelector('.hero__title-line--2');
@@ -208,51 +213,65 @@ if (titleLine1 && titleLine2) {
   chars2 = splitTextToChars(titleLine2);
 }
 
+// Pre-set chars to invisible state before revealing
+if (chars1.length > 0) gsap.set(chars1, { opacity: 0, y: 100, filter: 'blur(12px)' });
+if (chars2.length > 0) gsap.set(chars2, { opacity: 0, y: 80, filter: 'blur(10px)' });
+
+// NOW safe to reveal — fonts loaded, chars pre-hidden
+gsap.set('#heroTitle', { visibility: 'visible', opacity: 1 });
 
 /* ═════════════════════════════════════════════
    HERO ENTRY ANIMATION
    ═════════════════════════════════════════════ */
-const heroTl = gsap.timeline({ delay: 0.3 });
 
-// Animate individual characters in on load
-if (chars1.length > 0) {
-  heroTl.from(chars1, {
-    y: 100,
-    opacity: 0,
-    filter: 'blur(12px)',
-    duration: 1,
-    stagger: 0.04,
-    ease: 'power3.out',
-  });
+// If user refreshed mid-scroll, skip entry animation — just show everything
+const isScrolledPastTop = window.scrollY > 50;
+
+if (isScrolledPastTop) {
+  // Instantly show all elements in their natural state
+  gsap.set(chars1, { opacity: 1, y: 0, filter: 'blur(0px)' });
+  gsap.set(chars2, { opacity: 1, y: 0, filter: 'blur(0px)' });
+  gsap.set('.hero__tagline', { opacity: 1, y: 0 });
+  gsap.set('.hero__scroll', { opacity: 1 });
+  gsap.set('.hero__media-frame', { opacity: 1 });
+} else {
+  // Normal entry animation — user is at the top
+  const heroTl = gsap.timeline({ delay: 0.3 });
+
+  if (chars1.length > 0) {
+    heroTl.fromTo(chars1,
+      { y: 100, opacity: 0, filter: 'blur(12px)' },
+      { y: 0, opacity: 1, filter: 'blur(0px)', duration: 1, stagger: 0.04, ease: 'power3.out' }
+    );
+  }
+
+  if (chars2.length > 0) {
+    heroTl.fromTo(chars2,
+      { y: 80, opacity: 0, filter: 'blur(10px)' },
+      { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.9, stagger: 0.03, ease: 'power3.out' },
+    '-=0.6');
+  }
+
+  heroTl
+    .to('.hero__tagline', {
+      opacity: 1,
+      y: 0,
+      duration: 0.8,
+      ease: 'power2.out',
+    }, '-=0.4')
+    .to('.hero__scroll', {
+      opacity: 1,
+      duration: 0.6,
+    }, '-=0.3')
+    .to('.hero__media-frame', {
+      opacity: 1,
+      duration: 0.8,
+      ease: 'power2.out',
+    }, '-=0.5');
+
+  // Start the sweep after entry animation finishes
+  heroTl.call(createLightSweep);
 }
-
-if (chars2.length > 0) {
-  heroTl.from(chars2, {
-    y: 80,
-    opacity: 0,
-    filter: 'blur(10px)',
-    duration: 0.9,
-    stagger: 0.03,
-    ease: 'power3.out',
-  }, '-=0.6');
-}
-
-heroTl
-  .to('.hero__tagline', {
-    opacity: 1,
-    y: 0,
-    duration: 0.8,
-    ease: 'power2.out',
-  }, '-=0.4')
-  .to('.hero__scroll', {
-    opacity: 1,
-    duration: 0.6,
-  }, '-=0.3')
-  .to('.hero__media-frame', {
-    opacity: 1,
-    duration: 0.8,
-    ease: 'power2.out',
-  }, '-=0.5');
 
 
 /* ═════════════════════════════════════════════
@@ -301,8 +320,10 @@ function createLightSweep() {
   });
 }
 
-// Start the sweep after entry animation finishes
-heroTl.call(createLightSweep);
+// Start the sweep — after entry animation or immediately if scrolled
+if (isScrolledPastTop) {
+  createLightSweep();
+}
 
 
 /* ═════════════════════════════════════════════
@@ -392,6 +413,179 @@ if (chars1.length > 0 && chars2.length > 0) {
     }, 0);
 }
 
+// Force ScrollTrigger to recalculate positions based on current scroll
+// Critical for mid-page refresh where browser restores scroll position
+ScrollTrigger.refresh();
+
+}); // end document.fonts.ready
+
+
+/* ═════════════════════════════════════════════
+   SCROLL: GARAGE DOOR OPENS (Phase 1.5: 20%→45%)
+   Sectional door slides up revealing the scene
+   ═════════════════════════════════════════════ */
+const garageDoor = document.getElementById('heroGarageDoor');
+if (garageDoor) {
+  gsap.timeline({
+    scrollTrigger: {
+      trigger: '#hero',
+      start: '35% top',
+      end: '55% top',
+      scrub: 1.5,
+    }
+  })
+    .to(garageDoor, {
+      yPercent: -100,
+      ease: 'none',
+    });
+}
+
+
+/* ═════════════════════════════════════════════
+   3D BMW E30 M3 — PŘÍMÝ SCROLL CONTROLLER
+   Žádný ScrollTrigger pro 3D auto.
+   Počítáme stav přímo ze scroll pozice každý frame.
+   Bulletproof — funguje vždy, dopředu i zpět.
+   ═════════════════════════════════════════════ */
+const car3d = new Car3DEngine();
+car3d.init();
+
+car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
+  console.log(`Loading BMW: ${Math.round(progress * 100)}%`);
+}).then(() => {
+  console.log('✅ BMW E30 M3 ready');
+
+  // Vynutit skrytí na startu
+  car3d.setOpacity(0);
+
+  // Hero výška = 475vh, počítáme z CSS, ne z offsetHeight
+  // (offsetHeight může vrátit nesmysly kvůli fixed children)
+  const HERO_VH = 475;
+
+  // Služby element pro detekci konce
+  const servicesEl = document.querySelector('.services');
+
+  // ── HLAVNÍ SCROLL HANDLER — volaný každý frame ──
+  function updateCarState() {
+    const vh = window.innerHeight;
+    const heroHeight = (HERO_VH / 100) * vh; // 475vh v pixelech
+    const scrollY = window.scrollY;
+
+    // Pixelové hranice pro fáze
+    const fadeStart = heroHeight * 0.55;   // auto začne fade-in (později)
+    const fadeEnd   = heroHeight * 0.70;   // auto plně viditelné (rychlejší)
+    const moveStart = heroHeight * 0.82;   // auto jede dopředu
+    const moveEnd   = heroHeight * 0.98;   // konec animace
+    const servicesTop = servicesEl ? servicesEl.offsetTop : heroHeight;
+
+    // ── OPACITY ──
+    let opacity = 0;
+    if (scrollY < fadeStart) {
+      // Nad garážovými vraty → auto neviditelné
+      opacity = 0;
+    } else if (scrollY < fadeEnd) {
+      // Garáž se otevírá → plynulý fade-in 0→1
+      opacity = (scrollY - fadeStart) / (fadeEnd - fadeStart);
+    } else {
+      // Garáž otevřená → plně viditelné (services handler přebírá)
+      opacity = 1;
+    }
+    car3d.setOpacity(opacity);
+
+    // (Phase 3c odstraněna — auto zůstává statické v hero)
+
+    // ── OVERLAY TEXT — fade out (78% → 85%) ──
+    // Pod 78% ho NEŘÍDÍME — jiné animace ho zobrazují
+    const overlayEl = document.getElementById('heroOverlayText');
+    if (overlayEl) {
+      const textFadeStart = heroHeight * 0.78;
+      const textFadeEnd   = heroHeight * 0.85;
+      if (scrollY >= textFadeStart && scrollY < textFadeEnd) {
+        const p = (scrollY - textFadeStart) / (textFadeEnd - textFadeStart);
+        overlayEl.style.opacity = String(1 - p);
+        overlayEl.style.transform = `translateY(${-30 * p}px)`;
+      } else if (scrollY >= textFadeEnd) {
+        overlayEl.style.opacity = '0';
+        overlayEl.style.transform = 'translateY(-30px)';
+      }
+    }
+
+    // ── MEDIA WRAPPER — fade out (80% → 92%) ──
+    const mediaEl = document.getElementById('heroMediaWrapper');
+    if (mediaEl) {
+      const mediaFadeStart = heroHeight * 0.80;
+      const mediaFadeEnd   = heroHeight * 0.92;
+      if (scrollY < mediaFadeStart) {
+        mediaEl.style.opacity = '1';
+      } else if (scrollY < mediaFadeEnd) {
+        const p = (scrollY - mediaFadeStart) / (mediaFadeEnd - mediaFadeStart);
+        mediaEl.style.opacity = String(1 - p);
+      } else {
+        mediaEl.style.opacity = '0';
+      }
+    }
+  }
+
+  // Připojit na GSAP ticker — běží 60fps, synchronizovaný s Lenis
+  gsap.ticker.add(updateCarState);
+
+  /* ═════════════════════════════════════════════
+     SERVICES — INTRO SCROLLYTELLING
+     Auto jede doleva + rotuje (střecha viditelná).
+     Vše lineárně mapované na scroll.
+     ═════════════════════════════════════════════ */
+  const servicesIntro = document.getElementById('servicesIntro');
+
+  function updateServicesState() {
+    if (!servicesEl) return;
+
+    const servicesTop = servicesEl.offsetTop;
+    const servicesHeight = servicesEl.offsetHeight;
+    const scrollInServices = window.scrollY - servicesTop;
+
+    // Mimo services → nic
+    if (scrollInServices < 0 || scrollInServices > servicesHeight) return;
+
+    const progress = scrollInServices / servicesHeight; // 0–1
+
+    // Auto zůstává viditelné
+    car3d.setOpacity(1);
+
+    // ── AUTO: posun doleva + nahoru + rotace ──
+    const posX = progress * -1.6;
+    const posY = progress * 0.5;
+    const rotY = progress * Math.PI * 0.15;
+    const rotX = progress * 0.4;
+
+    car3d.update({
+      positionX: posX,
+      positionY: posY,
+      rotationY: rotY,
+      rotationX: rotX,
+    });
+
+    // ── NADPIS: fade-in od 15% do 35% ──
+    if (servicesIntro) {
+      if (progress < 0.15) {
+        servicesIntro.style.opacity = '0';
+        servicesIntro.style.transform = 'translateY(-50%) translateX(30px)';
+      } else if (progress < 0.35) {
+        const t = (progress - 0.15) / 0.20;
+        servicesIntro.style.opacity = String(t);
+        servicesIntro.style.transform = `translateY(-50%) translateX(${30 * (1 - t)}px)`;
+      } else {
+        servicesIntro.style.opacity = '1';
+        servicesIntro.style.transform = 'translateY(-50%) translateX(0)';
+      }
+    }
+  }
+
+  gsap.ticker.add(updateServicesState);
+
+}).catch((err) => {
+  console.warn('3D car not available:', err);
+});
+
 
 /* ═════════════════════════════════════════════
    SCROLL: MEDIA EXPANSION (Phase 2: 15%→70%)
@@ -425,8 +619,8 @@ if (overlayText) {
   gsap.timeline({
     scrollTrigger: {
       trigger: '#hero',
-      start: '55% top',
-      end: '75% top',
+      start: '60% top',
+      end: '78% top',
       scrub: 1,
     }
   })
@@ -496,6 +690,7 @@ ScrollTrigger.create({
       bottom: 0,
       top: 'auto',
     });
+    // Canvas stays visible — Phase 3 manages its visibility
   },
   onEnterBack: () => {
     gsap.set(['.hero__text-layer', '.hero__media-wrapper', '.hero__floaters', '.hero__particles', '.hero__scroll', '.hero__overlay-text'], {

@@ -1,20 +1,22 @@
-/* ═══════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════
    JOHNY CAR DETAILING — DESIGN SYSTEM
    Premium dark theme · Gold accents · Cinematic animations
-   ═══════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════ */
 
-/* ─── Tokens ─── */
+/* --- Tokens --- */
 :root {
   /* Colors */
   --black: #0A0A0A;
   --black-light: #111111;
   --black-card: #141414;
   --black-elevated: #1A1A1A;
-  --gold: #C8A846;
-  --gold-light: #D4B85A;
-  --gold-dark: #A88A30;
-  --gold-glow: rgba(200, 168, 70, 0.15);
-  --gold-glow-strong: rgba(200, 168, 70, 0.35);
+  --gold: #bf9515;
+  --gold-light: #d4a91e;
+  --gold-dark: #9a7a10;
+  --gold-glow: rgba(191, 149, 21, 0.15);
+  --gold-glow-strong: rgba(191, 149, 21, 0.35);
+  --gold-echo: #503f0a;
+  --gold-neon: rgba(191, 149, 21, 0.21);
   --white: #F5F0E8;
   --white-dim: rgba(245, 240, 232, 0.6);
   --white-muted: rgba(245, 240, 232, 0.35);
@@ -22,7 +24,7 @@
   --gray-border: rgba(255, 255, 255, 0.06);
 
   /* Typography */
-  --font-display: 'Outfit', -apple-system, sans-serif;
+  --font-display: 'Bebas Neue', 'Outfit', -apple-system, sans-serif;
   --font-body: 'Inter', -apple-system, sans-serif;
 
   /* Spacing */
@@ -36,7 +38,7 @@
 }
 
 
-/* ─── Global Reset ─── */
+/* --- Global Reset --- */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -89,9 +91,9 @@ img, video {
 }
 
 
-/* ═══════════════════════════════════════════════
+/* ══════════════════════════════════════════════════
    NAVIGATION
-   ═══════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════ */
 .nav {
   position: fixed;
   top: 0;
@@ -215,7 +217,7 @@ img, video {
 }
 
 
-/* ─── Button ─── */
+/* --- Button --- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -263,19 +265,19 @@ img, video {
 }
 
 
-/* ═══════════════════════════════════════════════
+/* ══════════════════════════════════════════════════
    HERO — CINEMATIC REVEAL
-   ═══════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════ */
 .hero {
   position: relative;
   width: 100%;
-  height: 300vh;
+  height: 475vh;
   background: var(--black);
   overflow: hidden;
 }
 
 
-/* ─── Gold Particles Canvas ─── */
+/* --- Gold Particles Canvas --- */
 .hero__particles {
   position: fixed;
   top: 0;
@@ -288,7 +290,7 @@ img, video {
 }
 
 
-/* ─── Frosted Title Text ─── */
+/* --- Frosted Title Text --- */
 .hero__text-layer {
   position: fixed;
   top: 0;
@@ -305,31 +307,41 @@ img, video {
 
 .hero__title {
   text-align: center;
-  line-height: 0.9;
+  line-height: 0.77;
   will-change: filter, opacity;
+  opacity: 0; /* hidden until JS is ready — prevents FOUC */
 }
 
 .hero__title-line {
   display: block;
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: clamp(4rem, 12vw, 11rem);
+  font-family: 'Bebas Neue', var(--font-display), sans-serif;
+  font-weight: 400;
+  font-size: clamp(3.6rem, 10.25vw, 197px);
   color: var(--gold);
-  letter-spacing: -0.02em;
-  text-shadow: 0 0 80px var(--gold-glow-strong);
+  letter-spacing: -0.029em;
+  /* Glow (right+up, #4f440d, soft) + Echo (right+DOWN, subtle) */
+  text-shadow:
+    23px -26px 7px #4f440d,
+    3px 7px 0px rgba(80, 63, 10, 0.4);
   will-change: transform, filter, opacity;
   filter: blur(0px);
   text-transform: uppercase;
   position: relative;
+  z-index: 2;
   overflow: visible;
 }
 
 .hero__title-line--2 {
-  font-size: clamp(3rem, 9vw, 8rem);
-  color: var(--white);
-  text-shadow: none;
-  letter-spacing: 0.08em;
+  font-family: 'Antonio', var(--font-display), sans-serif;
+  font-size: clamp(3.6rem, 10.56vw, 203px);
+  color: #ffffff;
+  letter-spacing: normal;
   font-weight: 700;
+  text-shadow: none;
+  -webkit-text-stroke: 0;
+  margin-top: -0.2em;
+  position: relative;
+  z-index: 1;
 }
 
 /* Individual character styling for explosion */
@@ -351,7 +363,7 @@ img, video {
 }
 
 
-/* ─── Expanding Media Container ─── */
+/* --- Expanding Media Container --- */
 .hero__media-wrapper {
   position: fixed;
   top: 0;
@@ -402,7 +414,47 @@ img, video {
 }
 
 
-/* ─── Floating Parallax TEXT — Clean, no labels ─── */
+/* --- Garage Door Overlay — Slides up on scroll --- */
+.hero__garage-door {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #d4d4d4 0%, #e8e8e8 30%, #dcdcdc 60%, #c8c8c8 100%);
+  will-change: transform;
+}
+
+.hero__garage-door-segment {
+  flex: 1;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  position: relative;
+  /* Subtle embossed line effect for each panel segment */
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.3),
+              inset 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+.hero__garage-door-segment:last-child {
+  border-bottom: none;
+}
+
+/* Subtle texture/noise on the door */
+.hero__garage-door::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 19.8%,
+    rgba(0, 0, 0, 0.06) 19.8%,
+    rgba(0, 0, 0, 0.06) 20%
+  );
+  pointer-events: none;
+}
+
+
+/* --- Floating Parallax TEXT — Clean, no labels --- */
 .hero__floaters {
   position: fixed;
   top: 0;
@@ -417,31 +469,34 @@ img, video {
   position: absolute;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  max-width: 280px;
+  gap: 0.2rem;
+  max-width: 220px;
   opacity: 0;
   will-change: transform, opacity;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
 }
 
 .hero__float-heading {
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--gold);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .hero__float-desc {
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--white-dim);
-  line-height: 1.5;
-  letter-spacing: 0.01em;
+  font-size: 0.65rem;
+  font-weight: 300;
+  color: rgba(245, 240, 232, 0.5);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
 }
 
 
-/* ─── Scroll Indicator ─── */
+/* --- Scroll Indicator --- */
 .hero__scroll {
   position: fixed;
   bottom: 40px;
@@ -476,7 +531,7 @@ img, video {
 }
 
 
-/* ─── Hero Overlay Text (appears on fullscreen media) ─── */
+/* --- Hero Overlay Text (appears on fullscreen media) --- */
 .hero__overlay-text {
   position: fixed;
   top: 0;
@@ -525,9 +580,9 @@ img, video {
 }
 
 
-/* ═══════════════════════════════════════════════
-   RESPONSIVE
-   ═══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — HERO
+   ══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .nav__links,
   .nav__phone {
@@ -539,11 +594,11 @@ img, video {
   }
 
   .hero__title-line {
-    font-size: clamp(2.5rem, 14vw, 5rem);
+    font-size: clamp(2.5rem, 10vw, 5rem);
   }
 
   .hero__title-line--2 {
-    font-size: clamp(2rem, 10vw, 3.5rem);
+    font-size: clamp(2.5rem, 10.5vw, 5.5rem);
   }
 
   .hero__float-heading {
@@ -569,11 +624,93 @@ img, video {
   }
   
   .hero__title-line {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
   }
 
   .hero__title-line--2 {
-    font-size: 1.8rem;
-    letter-spacing: 0.05em;
+    font-size: 2.4rem;
+    letter-spacing: normal;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   SERVICES — INTRO
+   ══════════════════════════════════════════════════════════ */
+
+.services {
+  position: relative;
+  height: 250vh;
+  background: var(--black);
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.services__sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.services__intro {
+  position: absolute;
+  top: 50%;
+  right: clamp(60px, 8vw, 140px);
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: right;
+  align-items: flex-end;
+  max-width: 480px;
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+.services__intro-tagline {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.services__intro-title {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 8vw, 8rem);
+  line-height: 0.92;
+  color: var(--white);
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.services__intro-desc {
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 1.1vw, 1.2rem);
+  line-height: 1.8;
+  color: var(--white-dim);
+  font-weight: 300;
+  max-width: 420px;
+}
+
+.services__intro-line {
+  width: 60px;
+  height: 2px;
+  background: var(--gold);
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .services__intro {
+    right: 24px;
+    max-width: 50%;
+  }
+
+  .services__intro-title {
+    font-size: clamp(2rem, 10vw, 3.5rem);
   }
 }
