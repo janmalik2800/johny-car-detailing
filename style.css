@@ -641,7 +641,7 @@ img, video {
 .services {
   position: relative;
   height: 250vh;
-  background: var(--black);
+  background: #181818;
   z-index: 2;
 }
 
