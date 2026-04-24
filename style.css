@@ -271,7 +271,7 @@ img, video {
 .hero {
   position: relative;
   width: 100%;
-  height: 475vh;
+  height: 340vh;
   background: var(--black);
   overflow: hidden;
 }
@@ -643,8 +643,6 @@ img, video {
   height: 250vh;
   background: var(--black);
   z-index: 2;
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
 .services__sticky {
@@ -652,6 +650,8 @@ img, video {
   top: 0;
   height: 100vh;
   width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
   overflow: hidden;
 }
 

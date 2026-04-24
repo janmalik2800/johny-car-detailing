@@ -458,9 +458,9 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
   // Vynutit skrytí na startu
   car3d.setOpacity(0);
 
-  // Hero výška = 475vh, počítáme z CSS, ne z offsetHeight
-  // (offsetHeight může vrátit nesmysly kvůli fixed children)
-  const HERO_VH = 475;
+  // Hero výška = 340vh, počítáme z CSS, ne z offsetHeight
+  // (offsetHeight může být nespolehlivý při prvním renderování)
+  const HERO_VH = 340;
 
   // Služby element pro detekci konce
   const servicesEl = document.querySelector('.services');
@@ -468,7 +468,7 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
   // ── HLAVNÍ SCROLL HANDLER — volaný každý frame ──
   function updateCarState() {
     const vh = window.innerHeight;
-    const heroHeight = (HERO_VH / 100) * vh; // 475vh v pixelech
+    const heroHeight = (HERO_VH / 100) * vh; // 340vh v pixelech
     const scrollY = window.scrollY;
 
     // Pixelové hranice pro fáze
@@ -536,26 +536,45 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
      ═════════════════════════════════════════════ */
   const servicesIntro = document.getElementById('servicesIntro');
 
+  // Animace auta začíná od konce hero (fadeEnd) a končí na 90% services
+  const HERO_VH_REF = 340;
+
   function updateServicesState() {
     if (!servicesEl) return;
 
-    const servicesTop = servicesEl.offsetTop;
-    const servicesHeight = servicesEl.offsetHeight;
-    const scrollInServices = window.scrollY - servicesTop;
+    const vh = window.innerHeight;
+    const heroH = (HERO_VH_REF / 100) * vh;
+    const animStart = heroH * 0.70;  // fadeEnd — auto právě viditelné
+    const servicesEnd = servicesEl.offsetTop + servicesEl.offsetHeight;
+    const animEnd = servicesEnd * 0.90; // 90% celého rozsahu
+    const scrollY = window.scrollY;
 
-    // Mimo services → nic
-    if (scrollInServices < 0 || scrollInServices > servicesHeight) return;
+    // Před animací → nic
+    if (scrollY < animStart) return;
+    // Za koncem services → drží finál
+    if (scrollY > servicesEnd) return;
 
-    const progress = scrollInServices / servicesHeight; // 0–1
+    // Progress 0–1 přes celý rozsah (hero fadeEnd → 90% services)
+    const rawProgress = (scrollY - animStart) / (animEnd - animStart);
+    const progress = Math.max(0, Math.min(1, rawProgress));
 
     // Auto zůstává viditelné
     car3d.setOpacity(1);
 
-    // ── AUTO: posun doleva + nahoru + rotace ──
-    const posX = progress * -1.6;
-    const posY = progress * 0.5;
-    const rotY = progress * Math.PI * 0.15;
-    const rotX = progress * 0.4;
+    // Auto dokončí pohyb na 45% progress (těsně PŘED textem na 100% = 50%)
+    const carP = Math.min(progress / 0.45, 1);
+
+    // ── AUTO: posun doleva ~400px (≈ 1.6 units) ──
+    const posX = carP * -1.6;
+
+    // positionY: auto jede nahoru (0 → +0.8)
+    const posY = carP * 0.8;
+
+    // rotationY: jenom lehce otočit (0 → ~27°)
+    const rotY = carP * Math.PI * 0.15;
+
+    // rotationX: naklonit pro viditelnost střechy (0 → +23°)
+    const rotX = carP * 0.4;
 
     car3d.update({
       positionX: posX,
@@ -564,13 +583,13 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
       rotationX: rotX,
     });
 
-    // ── NADPIS: fade-in od 15% do 35% ──
+    // ── NADPIS: fade-in od 30% do 50% progress ──
     if (servicesIntro) {
-      if (progress < 0.15) {
+      if (progress < 0.30) {
         servicesIntro.style.opacity = '0';
         servicesIntro.style.transform = 'translateY(-50%) translateX(30px)';
-      } else if (progress < 0.35) {
-        const t = (progress - 0.15) / 0.20;
+      } else if (progress < 0.50) {
+        const t = (progress - 0.30) / 0.20;
         servicesIntro.style.opacity = String(t);
         servicesIntro.style.transform = `translateY(-50%) translateX(${30 * (1 - t)}px)`;
       } else {
