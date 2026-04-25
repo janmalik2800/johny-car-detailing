@@ -700,7 +700,7 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
       }
       
       // Carousel active: from services 0.48 through orbit section end
-      const carouselActive = progress >= 0.48 || (orbitProgress > 0 && orbitProgress < 0.70);
+      const carouselActive = progress >= 0.48 || (orbitProgress > 0 && orbitProgress < 0.92);
       
       // Pre-mount carousel to body once (avoids DOM reflow stutter during animation)
       if (carouselSection.parentElement !== document.body) {
@@ -718,28 +718,41 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
         let spawnProgress = 0;
         if (orbitProgress <= 0) {
           spawnProgress = Math.min(1, (progress - 0.48) / 0.27);
-        } else if (orbitProgress >= 0.38) {
-          // Despawn OUT: longer fade (0.38→0.65)
-          spawnProgress = 1 - smoothstep((orbitProgress - 0.38) / 0.27);
+        } else if (orbitProgress >= 0.55) {
+          // Despawn OUT: fade (0.55→0.85)
+          spawnProgress = 1 - smoothstep((orbitProgress - 0.55) / 0.30);
         } else {
           spawnProgress = 1;
         }
         
-        // Rotation: starts in SERVICES (progress 0.55) and continues through ORBIT (72%)
+        // Fade title & counter with spawnProgress
+        if (carouselTitleEl) carouselTitleEl.style.opacity = String(spawnProgress);
+        if (carouselCounterEl) {
+          const counterParent = carouselCounterEl.closest('.carousel-section__counter');
+          if (counterParent) counterParent.style.opacity = String(spawnProgress);
+        }
+        
+        // Rotation: starts in SERVICES (progress 0.55) and continues through ORBIT (65%)
         // Uses raw scrollY for seamless cross-section calculation
         const rotStartY = animStart + 0.55 * (animEnd - animStart);
-        const rotEndY = orbitEl ? orbitEl.offsetTop + orbitEl.offsetHeight * 0.37 : rotStartY + 4000;
+        const rotEndY = orbitEl ? orbitEl.offsetTop + orbitEl.offsetHeight * 0.55 : rotStartY + 4000;
         const rotProgress = Math.min(1, Math.max(0, (scrollY - rotStartY) / (rotEndY - rotStartY)));
         const carouselAngle = rotProgress * Math.PI * 2;  // 360°
         positionCarouselCards(carouselAngle, spawnProgress);
         
         // Car visible during orbit, fades at orbit end
         if (orbitProgress > 0) {
-          car3d.setOpacity(orbitProgress < 0.45 ? 1 : 1 - smoothstep((orbitProgress - 0.45) / 0.20));
+          car3d.setOpacity(orbitProgress < 0.60 ? 1 : 1 - smoothstep((orbitProgress - 0.60) / 0.25));
         }
       } else {
         carouselSection.classList.remove('is-active');
         if (canvasEl) canvasEl.style.zIndex = '6';
+        // Reset title & counter
+        if (carouselTitleEl) carouselTitleEl.style.opacity = '0';
+        if (carouselCounterEl) {
+          const counterParent = carouselCounterEl.closest('.carousel-section__counter');
+          if (counterParent) counterParent.style.opacity = '0';
+        }
         // Reset cards to hidden
         carouselCards.forEach(card => {
           card.style.transform = 'scale(0)';
@@ -919,3 +932,336 @@ window.addEventListener('resize', () => {
 });
 
 console.log('🚗 Johny Car Detailing — Cinematic Hero v2 loaded');
+
+
+/* ═════════════════════════════════════════════════════════════
+   PORTFOLIO — SCATTERED HORIZONTAL GALLERY
+   ═════════════════════════════════════════════════════════════ */
+{
+  const PORTFOLIO_CARS = [
+    {
+      name: 'BMW M3 Competition',
+      tag: 'PPF & Leštění',
+      services: ['Detailní ruční mytí celého vozu','Chemická dekontaminace laku','Mechanická dekontaminace laku','1 krokové leštění laku','PPF folie - celopolep'],
+      text: 'Kompletní ošetření černého laku včetně PPF celopolep fólií XPEL Ultimate Plus. Vůz prošel důkladnou dekontaminací a jednokorokovým leštěním před aplikací ochranné fólie.',
+      photos: [
+        'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1619362280286-f1f8fd5032ed?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1607853554439-0ef3e0be4e0c?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1556189250-72ba954cfc2b?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1542282088-fe8426682b8f?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1493238792000-8113da705763?w=500&h=700&fit=crop&q=80',
+      ]
+    },
+    {
+      name: 'Porsche 911 GT3',
+      tag: 'Keramika & Detailing',
+      services: ['Keramická ochrana Ceramic Pro 9H','2-krokové leštění laku','Hloubkové čištění interiéru','Ošetření kůže a plastů'],
+      text: 'Porsche 911 GT3 v barvě Guards Red. Aplikace 4 vrstev Ceramic Pro 9H po dvoustupňové korekci laku. Interiér kompletně vyčištěn a ošetřen.',
+      photos: [
+        'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1614162692292-7ac56d7f831e?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1611859266238-4b98091d9d9b?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1580894894513-541e068a3e2b?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1546768292-fb12f6c92568?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1526726538690-5cbf956ae2fd?w=500&h=700&fit=crop&q=80',
+      ]
+    },
+    {
+      name: 'Audi RS6 Avant',
+      tag: 'PPF & Korekce',
+      services: ['PPF ochrana přední části','3-kroková korekce laku','Ceramic Pro Rain na skla','Nano ochrana disků'],
+      text: 'Audi RS6 Avant v Nardo Grey. Přední část vozu chráněna PPF fólií, celý vůz prošel 3-krokovou korekcí laku a aplikací keramického coatingu.',
+      photos: [
+        'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1542362567-b07e54358753?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1606611013016-969c19ba27a6?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1583267746897-2cf415887172?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1504215680853-026ed2a45def?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=500&h=700&fit=crop&q=80',
+      ]
+    },
+    {
+      name: 'Mercedes-AMG GT',
+      tag: 'Full Detailing',
+      services: ['Kompletní exteriérový detailing','Leštění laku 3-step','Keramický coating 5 vrstev','Window tinting 15%'],
+      text: 'Mercedes-AMG GT v Obsidian Black Metallic. Kompletní detailing včetně tříkrokového leštění a 5 vrstev keramického coatingu pro maximální ochranu a lesk.',
+      photos: [
+        'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1563720223185-11003d516935?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=500&h=700&fit=crop&q=80',
+      ]
+    },
+    {
+      name: 'Tesla Model 3',
+      tag: 'PPF & Chrome Delete',
+      services: ['PPF celopolep XPEL Ultimate','Keramický coating','Chrome delete - černý lesk','Tónování skel'],
+      text: 'Tesla Model 3 Performance v Pearl White. Celopolep PPF, chrome delete v černém lesku a tónování skel. Moderní ochrana pro moderní vůz.',
+      photos: [
+        'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1571607388263-1044f9ea01dd?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1549317661-bd32c8ce0afa?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1612825173281-9a193378527e?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1619317904081-10e86c9b7bdd?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=500&h=700&fit=crop&q=80',
+      ]
+    },
+    {
+      name: 'Volkswagen Golf R',
+      tag: 'Korekce & Ochrana',
+      services: ['Korekce laku - swirl removal','Ceramic Pro Sport','Čištění motorového prostoru','Renovace plastových dílů'],
+      text: 'VW Golf R v Lapiz Blue. Odstranění swirl marks a hologramů, aplikace Ceramic Pro Sport a kompletní renovace exteriérových plastových dílů.',
+      photos: [
+        'https://images.unsplash.com/photo-1542362567-b07e54358753?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1606611013016-969c19ba27a6?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1619362280286-f1f8fd5032ed?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1542282088-fe8426682b8f?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=500&h=700&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1493238792000-8113da705763?w=500&h=700&fit=crop&q=80',
+      ]
+    },
+  ];
+
+  const PORTFOLIO_LAYOUT = [
+    { x: 100,  y: 50,  w: 300, h: 420, rot: 1 },
+    { x: 620,  y: 200, w: 260, h: 360, rot: 2 },
+    { x: 1120, y: 30,  w: 320, h: 440, rot: 3 },
+    { x: 1680, y: 180, w: 280, h: 380, rot: 4 },
+    { x: 2220, y: 40,  w: 300, h: 420, rot: 5 },
+    { x: 2780, y: 210, w: 270, h: 370, rot: 6 },
+  ];
+
+  const pfPad = n => String(n).padStart(2, '0');
+
+  /* — Build scattered cards — */
+  const pfTrack = document.getElementById('portfolioTrack');
+  if (pfTrack) {
+    const lastCard = PORTFOLIO_LAYOUT[PORTFOLIO_LAYOUT.length - 1];
+    const pfTotalWidth = lastCard.x + lastCard.w + 200;
+    pfTrack.style.width = pfTotalWidth + 'px';
+    pfTrack.style.height = '700px';
+
+    PORTFOLIO_CARS.forEach((car, i) => {
+      const L = PORTFOLIO_LAYOUT[i];
+      const card = document.createElement('div');
+      card.className = `photo-card photo-card--rot-${L.rot}`;
+      card.style.cssText = `
+        --card-w: ${L.w}px; --card-h: ${L.h}px;
+        left: ${L.x}px; top: ${L.y}px;
+      `;
+      card.dataset.idx = i;
+      card.innerHTML = `
+        <div class="photo-card__img-wrap">
+          <img src="${car.photos[0]}" alt="${car.name}" loading="lazy"/>
+          <div class="photo-card__overlay">
+            <div class="photo-card__tag">${pfPad(i+1)} · ${car.tag}</div>
+            <div class="photo-card__name">${car.name}</div>
+          </div>
+          <div class="photo-card__plus">+</div>
+        </div>
+        <div class="photo-card__label">${car.name}</div>
+      `;
+      pfTrack.appendChild(card);
+    });
+
+    /* — GSAP ScrollTrigger: Two-phase portfolio reveal — */
+    const pfTrackEl = document.getElementById('portfolioTrack');
+    const pfPinEl = document.getElementById('portfolioPin');
+    const pfSectionEl = document.getElementById('portfolio');
+    const pfBgText = document.getElementById('portfolioBgText');
+
+    // Wait a tick for DOM to settle after card injection
+    requestAnimationFrame(() => {
+      const trackWidth = pfTrackEl.scrollWidth;
+      const viewportWidth = window.innerWidth;
+      const horizontalDistance = trackWidth - viewportWidth;
+      const textRevealDistance = window.innerHeight; // 1 viewport of scroll for text reveal
+
+      if (horizontalDistance > 0) {
+        // Track starts off-screen to the right — cards enter naturally from right
+        const startX = viewportWidth;
+        const totalSlide = startX + horizontalDistance; // full travel distance
+        const totalScrollDistance = textRevealDistance + totalSlide;
+
+        // Build timeline
+        const pfTimeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: pfSectionEl,
+            pin: pfPinEl,
+            start: 'top top',
+            end: () => `+=${totalScrollDistance}`,
+            scrub: 1,
+            invalidateOnRefresh: true,
+          }
+        });
+
+        // Phase 1: Text reveal — slides up from below and fades in
+        const textPortion = textRevealDistance / totalScrollDistance;
+        pfTimeline.fromTo(pfBgText,
+          { y: '60vh', opacity: 0 },
+          { y: 0, opacity: 1, ease: 'power2.out', duration: textPortion }
+        );
+
+        // Phase 2: Horizontal gallery — track slides from right edge to final position
+        // Cards naturally enter from the right, no fade needed
+        pfTimeline.fromTo(pfTrackEl,
+          { x: startX },
+          { x: -horizontalDistance, ease: 'none', duration: 1 - textPortion }
+        );
+      }
+    });
+
+    /* — Click card → Expand (stacked deck) — */
+    const pfExpandEl = document.getElementById('cardExpand');
+    const pfFanEl = document.getElementById('cardExpandFan');
+    const pfExpandName = document.getElementById('cardExpandName');
+    const pfExpandNum = document.getElementById('cardExpandNum');
+    const pfExpandServices = document.getElementById('cardExpandServices');
+    let pfCurrentCar = null;
+    let pfClickedDuringDrag = false;
+    let pfExpandStackIdx = 0;
+
+    pfTrackEl.addEventListener('mousedown', () => { pfClickedDuringDrag = false; });
+    pfTrackEl.addEventListener('mousemove', () => { pfClickedDuringDrag = true; });
+
+
+    pfTrack.addEventListener('click', e => {
+      if (pfClickedDuringDrag) return;
+      const card = e.target.closest('.photo-card');
+      if (!card) return;
+      openPfExpand(+card.dataset.idx);
+    });
+
+    function openPfExpand(idx) {
+      pfCurrentCar = idx;
+      pfExpandStackIdx = 0;
+      const car = PORTFOLIO_CARS[idx];
+      pfExpandName.textContent = car.name;
+      pfExpandNum.textContent = pfPad(idx + 1);
+      pfExpandServices.innerHTML = car.services.map(s => `<li>${s}</li>`).join('');
+
+      const total = car.photos.length;
+      pfFanEl.innerHTML = car.photos.map((photo, i) => `
+        <div class="stack-card ${i === 0 ? 'stack-card--active' : ''}"
+             data-stack="${i}"
+             style="
+               z-index: ${total - i};
+               transform: translateY(${i * 4}px) scale(${1 - i * 0.02});
+             ">
+          <img src="${photo}" alt="${car.name} foto ${i+1}" loading="lazy"/>
+        </div>
+      `).join('') + `
+        <div class="stack-counter" id="stackCounter">1 / ${total}</div>
+        <div class="stack-controls">
+          <button class="stack-btn" id="stackPrev">‹</button>
+          <button class="stack-btn" id="stackNext">›</button>
+        </div>
+      `;
+
+      pfExpandEl.classList.add('open');
+
+      setTimeout(() => {
+        document.getElementById('stackPrev').addEventListener('click', e => { e.stopPropagation(); pfStackNav(-1); });
+        document.getElementById('stackNext').addEventListener('click', e => { e.stopPropagation(); pfStackNav(1); });
+      }, 50);
+    }
+
+    function pfStackNav(dir) {
+      const car = PORTFOLIO_CARS[pfCurrentCar];
+      const total = car.photos.length;
+      const cards = pfFanEl.querySelectorAll('.stack-card');
+      const current = cards[pfExpandStackIdx];
+
+      if (dir > 0 && pfExpandStackIdx < total - 1) {
+        current.classList.add('stack-card--thrown');
+        current.style.transform = `translateX(-120%) rotate(-12deg)`;
+        current.style.opacity = '0';
+        pfExpandStackIdx++;
+      } else if (dir < 0 && pfExpandStackIdx > 0) {
+        pfExpandStackIdx--;
+        const prev = cards[pfExpandStackIdx];
+        prev.classList.remove('stack-card--thrown');
+        prev.style.transform = `translateY(0) scale(1)`;
+        prev.style.opacity = '1';
+      }
+
+      cards.forEach((c, i) => {
+        if (i < pfExpandStackIdx) return;
+        const offset = i - pfExpandStackIdx;
+        c.style.zIndex = total - offset;
+        if (offset === 0) {
+          c.style.transform = `translateY(0) scale(1)`;
+          c.classList.add('stack-card--active');
+        } else {
+          c.style.transform = `translateY(${offset * 4}px) scale(${1 - offset * 0.02})`;
+          c.classList.remove('stack-card--active');
+        }
+      });
+
+      document.getElementById('stackCounter').textContent = `${pfExpandStackIdx + 1} / ${total}`;
+    }
+
+    function closePfExpand() {
+      pfExpandEl.classList.remove('open');
+      pfExpandStackIdx = 0;
+    }
+
+    document.getElementById('cardExpandClose').addEventListener('click', closePfExpand);
+    document.getElementById('cardExpandCloseBtn').addEventListener('click', closePfExpand);
+
+    /* CTA → detail modal */
+    document.getElementById('cardExpandCTA').addEventListener('click', () => {
+      if (pfCurrentCar === null) return;
+      closePfExpand();
+      setTimeout(() => openPfDetail(pfCurrentCar), 300);
+    });
+
+    /* — Detail Modal — */
+    const pfDetailModal = document.getElementById('detailModal');
+
+    function openPfDetail(idx) {
+      const car = PORTFOLIO_CARS[idx];
+      document.getElementById('detailName').textContent = car.name;
+      document.getElementById('detailServices').innerHTML = car.services.map(s => `<li>${s}</li>`).join('');
+      document.getElementById('detailText').textContent = car.text;
+      document.getElementById('detailGallery').innerHTML = car.photos.map((p, i) =>
+        `<img src="${p}" alt="${car.name} foto ${i+1}" loading="lazy"/>`
+      ).join('');
+      pfDetailModal.classList.add('open');
+    }
+
+    document.getElementById('detailModalClose').addEventListener('click', () => pfDetailModal.classList.remove('open'));
+    document.getElementById('detailModalCloseBtn').addEventListener('click', () => pfDetailModal.classList.remove('open'));
+
+    /* Close modals on Escape */
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closePfExpand();
+        pfDetailModal.classList.remove('open');
+      }
+    });
+
+    console.log('📸 Portfolio — Scattered Gallery loaded');
+  }
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Portfolio Demo — Scattered Horizontal Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/portfolio-demo.css"/>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- HERO SPACER (simulates scroll before)  -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="spacer">
+    <h1 class="spacer__title">↓ SCROLLUJ DOLŮ NA PORTFOLIO ↓</h1>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- PORTFOLIO — SCATTERED HORIZONTAL SCROLL -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="portfolio" id="portfolio">
+    <!-- Film grain SVG filter -->
+    <svg class="portfolio__grain-svg" aria-hidden="true">
+      <filter id="grainFilter">
+        <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      </filter>
+      <rect width="100%" height="100%" filter="url(#grainFilter)"/>
+    </svg>
+    <!-- Studio lighting glow -->
+    <div class="portfolio__studio-glow" aria-hidden="true"></div>
+    <!-- Horizontal scroll wrapper -->
+    <div class="portfolio__scroll-area" id="portfolioScrollArea">
+      <div class="portfolio__track" id="portfolioTrack">
+        <!-- Giant background text — scrolls with track -->
+        <div class="portfolio__bg-text" id="portfolioBgText" aria-hidden="true">
+          MOJE PRÁCE
+        </div>
+        <!-- Cards injected by JS -->
+      </div>
+    </div>
+
+    <!-- Scroll hint -->
+    <div class="portfolio__hint">
+      <span>← SCROLL →</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- EXPANDED CARD OVERLAY (fan of photos)  -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="card-expand" id="cardExpand">
+    <div class="card-expand__backdrop" id="cardExpandClose"></div>
+    <button class="card-expand__close-btn" id="cardExpandCloseBtn">✕</button>
+    <div class="card-expand__content" id="cardExpandContent">
+      <!-- Fan of photos -->
+      <div class="card-expand__fan" id="cardExpandFan"></div>
+      <!-- Info panel -->
+      <div class="card-expand__info" id="cardExpandInfo">
+        <div class="card-expand__num" id="cardExpandNum">01</div>
+        <h3 class="card-expand__name" id="cardExpandName">BMW M3</h3>
+        <div class="card-expand__line"></div>
+        <ul class="card-expand__services" id="cardExpandServices"></ul>
+        <button class="card-expand__cta" id="cardExpandCTA">Chci to samé →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- DETAIL MODAL (full info)               -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="detail-modal" id="detailModal">
+    <div class="detail-modal__backdrop" id="detailModalClose"></div>
+    <div class="detail-modal__panel">
+      <button class="detail-modal__close-btn" id="detailModalCloseBtn">✕</button>
+      <div class="detail-modal__gallery" id="detailGallery"></div>
+      <div class="detail-modal__body">
+        <h2 class="detail-modal__name" id="detailName">BMW M3</h2>
+        <div class="detail-modal__line"></div>
+        <ul class="detail-modal__services" id="detailServices"></ul>
+        <p class="detail-modal__text" id="detailText"></p>
+        <a href="#kontakt" class="detail-modal__cta">Objednat konzultaci →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPACER AFTER -->
+  <section class="spacer spacer--after">
+    <h1 class="spacer__title">↑ PORTFOLIO SEKCE NAHOŘE ↑</h1>
+    <p style="color:#666; font-size:14px; margin-top:16px;">Tohle je jen placeholder — dál by pokračovaly recenze, kontakt atd.</p>
+  </section>
+
+  <script src="/portfolio-demo.js"></script>
+</body>
+</html>

@@ -225,6 +225,68 @@
   <!-- Invisible carousel scroll zone — same look as services, extra scroll for slow rotation -->
   <section class="services-orbit" id="servicesOrbit"></section>
 
-  <script type="module" src="/main.js"></script>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- PORTFOLIO — PINNED HORIZONTAL SCROLL GALLERY  -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <section class="portfolio" id="portfolio">
+    <div class="portfolio__pin" id="portfolioPin">
+      <!-- Film grain SVG filter -->
+      <svg class="portfolio__grain-svg" aria-hidden="true">
+        <filter id="grainFilter">
+          <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+        </filter>
+        <rect width="100%" height="100%" filter="url(#grainFilter)"/>
+      </svg>
+      <!-- Studio lighting glow -->
+      <div class="portfolio__studio-glow" aria-hidden="true"></div>
+      <!-- Giant background text — stays fixed, revealed first -->
+      <div class="portfolio__bg-text" id="portfolioBgText" aria-hidden="true">
+        MOJE PRÁCE
+      </div>
+      <!-- Track that slides left via GSAP (over the text) -->
+      <div class="portfolio__track" id="portfolioTrack">
+        <!-- Cards injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- EXPANDED CARD OVERLAY (stacked deck)           -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="card-expand" id="cardExpand">
+    <div class="card-expand__backdrop" id="cardExpandClose"></div>
+    <button class="card-expand__close-btn" id="cardExpandCloseBtn">✕</button>
+    <div class="card-expand__content" id="cardExpandContent">
+      <!-- Stacked deck of photos -->
+      <div class="card-expand__fan" id="cardExpandFan"></div>
+      <!-- Info panel -->
+      <div class="card-expand__info" id="cardExpandInfo">
+        <div class="card-expand__num" id="cardExpandNum">01</div>
+        <h3 class="card-expand__name" id="cardExpandName">BMW M3</h3>
+        <div class="card-expand__line"></div>
+        <ul class="card-expand__services" id="cardExpandServices"></ul>
+        <button class="card-expand__cta" id="cardExpandCTA">Chci to samé →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- DETAIL MODAL (full info)                       -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="detail-modal" id="detailModal">
+    <div class="detail-modal__backdrop" id="detailModalClose"></div>
+    <div class="detail-modal__panel">
+      <button class="detail-modal__close-btn" id="detailModalCloseBtn">✕</button>
+      <div class="detail-modal__gallery" id="detailGallery"></div>
+      <div class="detail-modal__body">
+        <h2 class="detail-modal__name" id="detailName">BMW M3</h2>
+        <div class="detail-modal__line"></div>
+        <ul class="detail-modal__services" id="detailServices"></ul>
+        <p class="detail-modal__text" id="detailText"></p>
+        <a href="#kontakt" class="detail-modal__cta">Objednat konzultaci →</a>
+      </div>
+    </div>
+  </div>  <script type="module" src="/main.js"></script>
 </body>
 </html>
