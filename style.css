@@ -652,7 +652,15 @@ img, video {
 
 .services {
   position: relative;
-  height: 1200vh;
+  height: 600vh;
+  background: #101010;
+  z-index: 2;
+}
+
+/* Carousel scroll zone — visually identical to .services, provides extra scroll for slow card rotation */
+.services-orbit {
+  position: relative;
+  height: 500vh;
   background: #101010;
   z-index: 2;
 }
@@ -976,3 +984,217 @@ img, video {
   }
 }
 
+
+/* ══════════════════════════════════════════════════════════
+   CAROUSEL — 3D Service Cards (scroll-driven)
+   ══════════════════════════════════════════════════════════ */
+
+.carousel-section {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+  z-index: 5;
+}
+
+.carousel-section.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Section title ── */
+.carousel-section__title {
+  position: absolute;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.carousel-section__tagline {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.carousel-section__heading {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.carousel-section__line {
+  width: 60px;
+  height: 2px;
+  background: var(--gold);
+  margin-top: 4px;
+}
+
+/* ── Cards ── */
+.carousel__card {
+  position: absolute;
+  width: clamp(380px, 33vw, 520px);
+  aspect-ratio: 16 / 10;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(191, 149, 21, 0.15);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  will-change: transform, opacity, filter;
+  cursor: pointer;
+  transition: box-shadow 0.4s ease;
+}
+
+.carousel__card:hover {
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 40px rgba(191, 149, 21, 0.08);
+}
+
+/* Card background photo */
+.carousel__card-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.5) saturate(0.7);
+  transition: filter 0.6s ease, transform 0.6s ease;
+  transform: scale(1.05);
+}
+
+.carousel__card:hover .carousel__card-bg {
+  filter: brightness(0.65) saturate(0.85);
+  transform: scale(1.0);
+}
+
+/* Card glass overlay */
+.carousel__card-glass {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.2);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Card gradient */
+.carousel__card-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(10, 10, 10, 0.3) 50%,
+    rgba(10, 10, 10, 0.75) 100%
+  );
+}
+
+/* Ghost number */
+.carousel__ghost-num {
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  transform: translateY(-50%);
+  font-family: var(--font-display);
+  font-size: clamp(6rem, 10vw, 12rem);
+  color: rgba(255, 255, 255, 0.09);
+  line-height: 1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Card content */
+.carousel__card-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: clamp(24px, 3vw, 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 2;
+}
+
+.carousel__tag {
+  display: none;
+}
+
+.carousel__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 0.95;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.carousel__desc {
+  font-family: var(--font-body);
+  font-size: clamp(0.93rem, 1.1vw, 1.1rem);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 300;
+  max-width: 340px;
+}
+
+.carousel__cta {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  text-decoration: none;
+  text-transform: uppercase;
+  margin-top: 4px;
+  transition: color 0.3s ease;
+}
+
+.carousel__cta:hover {
+  color: var(--white);
+}
+
+/* ── Counter ── */
+.carousel-section__counter {
+  position: absolute;
+  bottom: clamp(32px, 5vh, 60px);
+  right: clamp(32px, 5vw, 80px);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-display);
+  z-index: 3;
+}
+
+.carousel-section__counter-current {
+  font-size: 2rem;
+  color: var(--gold);
+}
+
+.carousel-section__counter-sep {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.carousel-section__counter-total {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.35);
+}

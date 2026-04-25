@@ -529,62 +529,86 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
   // Připojit na GSAP ticker — běží 60fps, synchronizovaný s Lenis
   gsap.ticker.add(updateCarState);
 
+  // Shared utility functions
+  const HERO_VH_REF = 340;
+  function smoothstep(t) { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
   /* ═════════════════════════════════════════════
-     SERVICES — FULL SCROLLYTELLING ENGINE
-     Phases: Intro → PPF → Camera transition → 3× Service panels (ping-pong)
-     Single section (1200vh), auto moves L↔R, camera goes bird's-eye.
+     SERVICES — SCROLL-DRIVEN CAROUSEL ENGINE
+     Phase 1: Intro text + car left (0→15%)
+     Phase 2: Car transitions to center (15→25%)  
+     Phase 3: Carousel rotates (25→95%)
+     Phase 4: Fade out (95→100%)
      ═════════════════════════════════════════════ */
   const servicesIntro = document.getElementById('servicesIntro');
-  const serviceDetail1 = document.getElementById('serviceDetail1');
-  const servicePanel2 = document.getElementById('servicePanel2');
-  const servicePanel3 = document.getElementById('servicePanel3');
-  const servicePanel4 = document.getElementById('servicePanel4');
+  const carouselSection = document.getElementById('carouselSection');
+  const carouselCards = document.querySelectorAll('#carouselSection .carousel__card');
+  const carouselCounterEl = document.getElementById('carouselCounterCurrent');
+  const carouselTitleEl = document.getElementById('carouselTitle');
 
-  // Animation range constants
-  const HERO_VH_REF = 340;
+  // Carousel layout config (from prototype)
+  const CAROUSEL_CFG = {
+    radiusX: 480,
+    scaleFront: 1.05, scaleBack: 0.45,
+    opacityFront: 1.0, opacityBack: 0.08,
+    blurBack: 10,
+    cardTiltMax: 35,
+    orbitTiltY: 120,  // vertical tilt amplitude
+  };
+  const NUM_CARDS = carouselCards.length || 4;
+  const ANGLE_PER_CARD = (Math.PI * 2) / NUM_CARDS;
 
-  // Smooth easing function (smoothstep)
-  function smoothstep(t) {
-    t = Math.max(0, Math.min(1, t));
-    return t * t * (3 - 2 * t);
-  }
+  /**
+   * Position carousel cards with Orbital Spawn entrance.
+   * @param {number} angle - carousel rotation angle
+   * @param {number} spawn - 0 = all cards at center (car position), 1 = full orbit
+   */
+  function positionCarouselCards(angle, spawn) {
+    const sp = Math.max(0, Math.min(1, spawn));
+    let frontIndex = 0, frontDepth = -2;
+    carouselCards.forEach((card, i) => {
+      // Stagger: each card spawns slightly later
+      const cardSpawn = smoothstep(Math.max(0, Math.min(1, (sp - i * 0.08) / 0.7)));
 
-  // Linear interpolation
-  function lerp(a, b, t) {
-    return a + (b - a) * t;
-  }
+      const a = i * ANGLE_PER_CARD + angle;
+      const x = Math.sin(a) * CAROUSEL_CFG.radiusX;
+      const depth = Math.cos(a);
+      if (depth > frontDepth) { frontDepth = depth; frontIndex = i; }
+      const dn = (depth + 1) / 2;
+      const finalScale = CAROUSEL_CFG.scaleBack + dn * (CAROUSEL_CFG.scaleFront - CAROUSEL_CFG.scaleBack);
+      const finalOpacity = CAROUSEL_CFG.opacityBack + dn * (CAROUSEL_CFG.opacityFront - CAROUSEL_CFG.opacityBack);
+      const blur = CAROUSEL_CFG.blurBack * (1 - dn);
+      const tiltY = Math.sin(a) * -CAROUSEL_CFG.cardTiltMax;
+      const y = depth * CAROUSEL_CFG.orbitTiltY;
 
-  // Animate a panel: opacity + translateY + translateX
-  function animatePanel(el, progress, fadeIn, holdEnd, fadeOut, side) {
-    if (!el) return;
-    const offsetX = side === 'right' ? 40 : -40;
+      // Orbital Spawn: lerp from center (0,60px,scale0) to final orbit position
+      const spawnX = lerp(0, x, cardSpawn);
+      const spawnY = lerp(60, y, cardSpawn);  // 60px = car center offset
+      const spawnScale = lerp(0, finalScale, cardSpawn);
+      const spawnOpacity = lerp(0, finalOpacity, cardSpawn);
+      const spawnBlur = lerp(25, blur, cardSpawn);
+      const spawnTilt = lerp(0, tiltY, cardSpawn);
 
-    if (progress < fadeIn) {
-      el.style.opacity = '0';
-      el.style.transform = `translateY(-50%) translateX(${offsetX}px)`;
-    } else if (progress < holdEnd) {
-      // Fade in
-      const dur = holdEnd - fadeIn;
-      const inP = dur > 0 ? Math.min((progress - fadeIn) / (dur * 0.4), 1) : 1;
-      const ease = smoothstep(inP);
-      el.style.opacity = String(ease);
-      el.style.transform = `translateY(-50%) translateX(${offsetX * (1 - ease)}px)`;
-    } else if (progress < fadeOut) {
-      el.style.opacity = '1';
-      el.style.transform = 'translateY(-50%) translateX(0)';
-    } else if (progress < fadeOut + 0.03) {
-      const outP = (progress - fadeOut) / 0.03;
-      const ease = smoothstep(outP);
-      el.style.opacity = String(1 - ease);
-      el.style.transform = `translateY(-50%) translateX(${-offsetX * 0.5 * ease}px)`;
-    } else {
-      el.style.opacity = '0';
+      card.style.transform = `translateX(${spawnX}px) translateY(${spawnY}px) scale(${spawnScale}) rotateY(${spawnTilt}deg)`;
+      card.style.opacity = spawnOpacity;
+      card.style.filter = spawnBlur > 0.5 ? `blur(${spawnBlur.toFixed(1)}px)` : 'none';
+      card.style.zIndex = Math.round(dn * 100);
+    });
+    if (carouselCounterEl) {
+      carouselCounterEl.textContent = String(frontIndex + 1).padStart(2, '0');
     }
   }
 
+  // Car target states
+  const introX = -1.6, introY = 0.8, introRotY = Math.PI * 0.15, introRotX = 0.4;
+  // Carousel center position (matching prototype)
+  const carouselX = 0, carouselY = 0.45, carouselRotY = -0.2, carouselRotX = 0, carouselScale = 0.8;
+
+  let carAutoAngle = 0;
+
   function updateServicesState() {
     if (!servicesEl) return;
-
     const vh = window.innerHeight;
     const heroH = (HERO_VH_REF / 100) * vh;
     const animStart = heroH * 0.70;
@@ -593,273 +617,145 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
     const scrollY = window.scrollY;
 
     if (scrollY < animStart) return;
-    if (scrollY > servicesEnd) {
-      car3d.setOpacity(0);
-      return;
-    }
+    // Don't kill car after services — orbit section needs it visible
+    const orbitEl = document.getElementById('servicesOrbit');
+    const orbitEnd = orbitEl ? orbitEl.offsetTop + orbitEl.offsetHeight : servicesEnd;
+    if (scrollY > orbitEnd) { car3d.setOpacity(0); return; }
 
-    const rawProgress = (scrollY - animStart) / (animEnd - animStart);
-    const progress = Math.max(0, Math.min(1, rawProgress));
+    const progress = Math.max(0, Math.min(1, (scrollY - animStart) / (animEnd - animStart)));
 
-    // ═══════════════════════════════════════════
-    // COMPRESSION: Old 450vh phases → first ~35% of 1200vh
-    // Ratio: 450/1200 ≈ 0.375, but we use animEnd math
-    // Old thresholds mapped: multiply by ~0.41
-    // ═══════════════════════════════════════════
+    // ── OPACITY ── (car stays visible through services; orbit section handles fade-out)
+    car3d.setOpacity(1);
 
-    // ── CAR OPACITY ──
-    // Always visible during animation, fade-out at very end
-    if (progress < 0.93) {
-      car3d.setOpacity(1);
+    // ── CAR POSITION ──
+    let posX, posY, rotY, rotX, carScale = 1.0;
+    let camX = 0, camY = 0.3, camZ = 6, lookX = 0, lookY = 0.6, lookZ = 0, fov = 35;
+
+    if (progress <= 0.25) {
+      // Phase 1: car moves left (intro) — 0→25%
+      const p = smoothstep(Math.min(progress / 0.25, 1));
+      posX = p * introX; posY = p * introY;
+      rotY = p * introRotY; rotX = p * introRotX;
+    } else if (progress <= 0.45) {
+      // Phase 2: car transitions to carousel center — 25→45%
+      const p = smoothstep((progress - 0.25) / 0.20);
+      posX = lerp(introX, carouselX, p);
+      posY = lerp(introY, carouselY, p);
+      rotY = lerp(introRotY, carouselRotY, p);
+      rotX = lerp(introRotX, carouselRotX, p);
+      carScale = lerp(1.0, carouselScale, p);
+      // Camera: transition to 3/4 front view (matching prototype)
+      camX = lerp(0, 2.5, p);
+      camY = lerp(0.3, 1.8, p);
+      camZ = lerp(6, 5, p);
+      lookY = lerp(0.6, 0.3, p);
+      fov = lerp(35, 32, p);
     } else {
-      const fadeOut = (progress - 0.93) / 0.07;
-      car3d.setOpacity(1 - smoothstep(fadeOut));
+      // Phase 3+4: carousel — car stays centered with gentle oscillation
+      posX = carouselX; posY = carouselY;
+      rotX = carouselRotX; carScale = carouselScale;
+      // Oscillation fades in smoothly (0.48→0.60) to avoid position jump
+      const oscBlend = Math.min(1, Math.max(0, (progress - 0.48) / 0.12));
+      carAutoAngle += 0.0003;
+      rotY = carouselRotY + Math.sin(carAutoAngle) * 0.15 * oscBlend;
+      camX = 2.5; camY = 1.8; camZ = 5; lookX = 0; lookY = 0.3; lookZ = 0; fov = 32;
     }
 
-     // ═══ PHASE 1: INTRO — Car moves left (0→15%) ═══
-    // ═══ PHASE 2: PPF DETAIL — Car moves right (18→28%) ═══
-
-    const phase1End = 0.15;
-    const phase1X = -1.6;
-    const phase1Y = 0.8;
-    const phase1RotY = Math.PI * 0.15;
-    const phase1RotX = 0.4;
-
-    const phase2Start = 0.18;
-    const phase2End = 0.28;
-    const phase2X = 1.6;
-    const phase2RotY = -Math.PI * 0.30;
-
-    // ═══ PHASE 3: Camera transition + scale down (28→38%) ═══
-    // Longer transition — this is the cinematic moment
-    const birdStart = 0.28;
-    const birdEnd = 0.38;
-
-    // ═══ PHASE 4-6: Service panels with ping-pong ═══
-    // Longer transitions between panels, shorter text holds
-    // Panel 2: 38→52% — car LEFT, panel RIGHT
-    // Transition: 52→60%
-    // Panel 3: 60→74% — car RIGHT, panel LEFT
-    // Transition: 74→82%
-    // Panel 4: 82→94% — car LEFT, panel RIGHT
-
-    const p2Start = 0.38, p2End = 0.52;
-    const p3Start = 0.60, p3End = 0.74;
-    const p4Start = 0.82, p4End = 0.94;
-
-    // Car positions for ping-pong
-    const carLeftX = -1.8;
-    const carRightX = 1.8;
-    const carBirdY = 0.6;
-    const carBirdRotX = 0.55;
-    const carBirdScale = 0.5; // SCALE DOWN — car is much smaller in bird's-eye
-
-    // ── COMPUTE CAR STATE ──
-    let posX, posY, rotY, rotX;
-    let carScale = 1.0;
-
-    // Camera state
-    let camX = 0, camY = 0.3, camZ = 6;
-    let lookX = 0, lookY = 0.6, lookZ = 0;
-    let fov = 35;
-
-    if (progress <= phase1End) {
-      // Phase 1: car moves left
-      const p = Math.min(progress / phase1End, 1);
-      const ease = smoothstep(p);
-      posX = ease * phase1X;
-      posY = ease * phase1Y;
-      rotY = ease * phase1RotY;
-      rotX = ease * phase1RotX;
-    } else if (progress <= phase2Start) {
-      // Hold at phase 1 end
-      posX = phase1X;
-      posY = phase1Y;
-      rotY = phase1RotY;
-      rotX = phase1RotX;
-    } else if (progress <= phase2End) {
-      // Phase 2: car moves right
-      const p = smoothstep((progress - phase2Start) / (phase2End - phase2Start));
-      posX = lerp(phase1X, phase2X, p);
-      posY = phase1Y;
-      rotY = lerp(phase1RotY, phase2RotY, p);
-      rotX = phase1RotX;
-    } else if (progress <= birdEnd) {
-      // Phase 3: Camera transition + SCALE DOWN
-      // Long, cinematic transition — this is where the magic happens
-      const p = smoothstep((progress - birdStart) / (birdEnd - birdStart));
-      posX = lerp(phase2X, carLeftX, p);
-      posY = lerp(phase1Y, carBirdY, p);
-      rotY = lerp(phase2RotY, Math.PI * 0.12, p);
-      rotX = lerp(phase1RotX, carBirdRotX, p);
-      carScale = lerp(1.0, carBirdScale, p);
-
-      // Camera transition: side view → elevated 3/4 view
-      camX = lerp(0, carLeftX * 0.3, p);
-      camY = lerp(0.3, 3.5, p);
-      camZ = lerp(6, 4.5, p);
-      lookX = lerp(0, carLeftX * 0.5, p);
-      lookY = lerp(0.6, 0, p);
-      fov = lerp(35, 28, p);
-    } else if (progress <= p2End) {
-      // Panel 2: car LEFT, stable, scaled down
-      posX = carLeftX;
-      posY = carBirdY;
-      rotY = Math.PI * 0.12;
-      rotX = carBirdRotX;
-      carScale = carBirdScale;
-      camX = carLeftX * 0.3;
-      camY = 3.5;
-      camZ = 4.5;
-      lookX = carLeftX * 0.5;
-      lookY = 0;
-      fov = 28;
-    } else if (progress <= p3Start) {
-      // Transition: car LEFT → RIGHT (LONGER — 8% of scroll)
-      const p = smoothstep((progress - p2End) / (p3Start - p2End));
-      posX = lerp(carLeftX, carRightX, p);
-      posY = carBirdY;
-      rotY = lerp(Math.PI * 0.12, -Math.PI * 0.12, p);
-      rotX = carBirdRotX;
-      carScale = carBirdScale;
-      camX = lerp(carLeftX * 0.3, carRightX * 0.3, p);
-      camY = 3.5;
-      camZ = 4.5;
-      lookX = lerp(carLeftX * 0.5, carRightX * 0.5, p);
-      lookY = 0;
-      fov = 28;
-    } else if (progress <= p3End) {
-      // Panel 3: car RIGHT, stable
-      posX = carRightX;
-      posY = carBirdY;
-      rotY = -Math.PI * 0.12;
-      rotX = carBirdRotX;
-      carScale = carBirdScale;
-      camX = carRightX * 0.3;
-      camY = 3.5;
-      camZ = 4.5;
-      lookX = carRightX * 0.5;
-      lookY = 0;
-      fov = 28;
-    } else if (progress <= p4Start) {
-      // Transition: car RIGHT → LEFT (LONGER — 8% of scroll)
-      const p = smoothstep((progress - p3End) / (p4Start - p3End));
-      posX = lerp(carRightX, carLeftX, p);
-      posY = carBirdY;
-      rotY = lerp(-Math.PI * 0.12, Math.PI * 0.12, p);
-      rotX = carBirdRotX;
-      carScale = carBirdScale;
-      camX = lerp(carRightX * 0.3, carLeftX * 0.3, p);
-      camY = 3.5;
-      camZ = 4.5;
-      lookX = lerp(carRightX * 0.5, carLeftX * 0.5, p);
-      lookY = 0;
-      fov = 28;
-    } else if (progress <= p4End) {
-      // Panel 4: car LEFT, stable
-      posX = carLeftX;
-      posY = carBirdY;
-      rotY = Math.PI * 0.12;
-      rotX = carBirdRotX;
-      carScale = carBirdScale;
-      camX = carLeftX * 0.3;
-      camY = 3.5;
-      camZ = 4.5;
-      lookX = carLeftX * 0.5;
-      lookY = 0;
-      fov = 28;
-    } else {
-      // Outro: car stays, just fading out
-      posX = carLeftX;
-      posY = carBirdY;
-      rotY = Math.PI * 0.12;
-      rotX = carBirdRotX;
-      carScale = carBirdScale;
-      camX = carLeftX * 0.3;
-      camY = 3.5;
-      camZ = 4.5;
-      lookX = carLeftX * 0.5;
-      lookY = 0;
-      fov = 28;
-    }
-
-    // Apply car state (now includes scale)
     car3d.update({ positionX: posX, positionY: posY, rotationY: rotY, rotationX: rotX, scale: carScale });
-
-    // Apply camera state (only during bird's-eye phases)
-    if (progress >= birdStart) {
-      car3d.updateCamera({
-        positionX: camX, positionY: camY, positionZ: camZ,
-        lookAtX: lookX, lookAtY: lookY, lookAtZ: lookZ,
-        fov: fov,
-      });
+    if (progress >= 0.25) {
+      car3d.updateCamera({ positionX: camX, positionY: camY, positionZ: camZ, lookAtX: lookX, lookAtY: lookY, lookAtZ: lookZ, fov });
     }
 
-    // ═══ TEXT ANIMATIONS ═══
-
-    // Intro text: fade-in 10→14%, hold 14→16%, fade-out 16→19%
+    // ── INTRO TEXT ──
     if (servicesIntro) {
-      if (progress < 0.10) {
+      if (progress < 0.12) {
         servicesIntro.style.opacity = '0';
         servicesIntro.style.transform = 'translateY(-50%) translateX(30px)';
-      } else if (progress < 0.14) {
-        const t = smoothstep((progress - 0.10) / 0.04);
+      } else if (progress < 0.18) {
+        const t = smoothstep((progress - 0.12) / 0.06);
         servicesIntro.style.opacity = String(t);
         servicesIntro.style.transform = `translateY(-50%) translateX(${30 * (1 - t)}px)`;
-      } else if (progress < 0.16) {
+      } else if (progress < 0.28) {
         servicesIntro.style.opacity = '1';
         servicesIntro.style.transform = 'translateY(-50%) translateX(0)';
-      } else if (progress < 0.19) {
-        const t = smoothstep((progress - 0.16) / 0.03);
+      } else if (progress < 0.35) {
+        const t = smoothstep((progress - 0.28) / 0.07);
         servicesIntro.style.opacity = String(1 - t);
-        servicesIntro.style.transform = `translateY(-50%) translateX(${-30 * t}px)`;
       } else {
         servicesIntro.style.opacity = '0';
       }
     }
 
-    // PPF detail: fade-in 22→25%, hold 25→27%, fade-out 27→30%
-    if (serviceDetail1) {
-      if (progress < 0.22) {
-        serviceDetail1.style.opacity = '0';
-        serviceDetail1.style.transform = 'translateY(-50%) translateX(-30px)';
-      } else if (progress < 0.25) {
-        const t = smoothstep((progress - 0.22) / 0.03);
-        serviceDetail1.style.opacity = String(t);
-        serviceDetail1.style.transform = `translateY(-50%) translateX(${-30 * (1 - t)}px)`;
-      } else if (progress < 0.27) {
-        serviceDetail1.style.opacity = '1';
-        serviceDetail1.style.transform = 'translateY(-50%) translateX(0)';
-      } else if (progress < 0.30) {
-        const t = smoothstep((progress - 0.27) / 0.03);
-        serviceDetail1.style.opacity = String(1 - t);
-        serviceDetail1.style.transform = `translateY(-50%) translateX(${-20 * t}px)`;
+    // ── CAROUSEL SECTION ── (spawn in services, rotation in orbit)
+    if (carouselSection) {
+      const canvasEl = document.getElementById('car3dCanvas');
+      const orbitEl = document.getElementById('servicesOrbit');
+      
+      // Calculate orbit section progress (0→1 over its height)
+      let orbitProgress = 0;
+      if (orbitEl) {
+        const orbitTop = orbitEl.offsetTop;
+        const orbitHeight = orbitEl.offsetHeight;
+        orbitProgress = Math.max(0, Math.min(1, (scrollY - orbitTop) / orbitHeight));
+      }
+      
+      // Carousel active: from services 0.48 through orbit section end
+      const carouselActive = progress >= 0.48 || (orbitProgress > 0 && orbitProgress < 0.70);
+      
+      // Pre-mount carousel to body once (avoids DOM reflow stutter during animation)
+      if (carouselSection.parentElement !== document.body) {
+        document.body.appendChild(carouselSection);
+        carouselSection.style.position = 'fixed';
+        carouselSection.style.inset = '0';
+        carouselSection.style.zIndex = '8';
+      }
+      
+      if (carouselActive) {
+        carouselSection.classList.add('is-active');
+        if (canvasEl) canvasEl.style.zIndex = '6';
+        
+        // Spawn IN: in SERVICES section (progress 0.48→0.65) — no dead space!
+        let spawnProgress = 0;
+        if (orbitProgress <= 0) {
+          spawnProgress = Math.min(1, (progress - 0.48) / 0.27);
+        } else if (orbitProgress >= 0.38) {
+          // Despawn OUT: longer fade (0.38→0.65)
+          spawnProgress = 1 - smoothstep((orbitProgress - 0.38) / 0.27);
+        } else {
+          spawnProgress = 1;
+        }
+        
+        // Rotation: starts in SERVICES (progress 0.55) and continues through ORBIT (72%)
+        // Uses raw scrollY for seamless cross-section calculation
+        const rotStartY = animStart + 0.55 * (animEnd - animStart);
+        const rotEndY = orbitEl ? orbitEl.offsetTop + orbitEl.offsetHeight * 0.37 : rotStartY + 4000;
+        const rotProgress = Math.min(1, Math.max(0, (scrollY - rotStartY) / (rotEndY - rotStartY)));
+        const carouselAngle = rotProgress * Math.PI * 2;  // 360°
+        positionCarouselCards(carouselAngle, spawnProgress);
+        
+        // Car visible during orbit, fades at orbit end
+        if (orbitProgress > 0) {
+          car3d.setOpacity(orbitProgress < 0.45 ? 1 : 1 - smoothstep((orbitProgress - 0.45) / 0.20));
+        }
       } else {
-        serviceDetail1.style.opacity = '0';
+        carouselSection.classList.remove('is-active');
+        if (canvasEl) canvasEl.style.zIndex = '6';
+        // Reset cards to hidden
+        carouselCards.forEach(card => {
+          card.style.transform = 'scale(0)';
+          card.style.opacity = '0';
+          card.style.filter = 'blur(25px)';
+        });
       }
     }
-
-    // Panel 2 (Leštění): RIGHT side — appears shortly after car arrives
-    animatePanel(servicePanel2, progress, 0.40, 0.44, 0.49, 'right');
-
-    // Panel 3 (Keramika): LEFT side
-    animatePanel(servicePanel3, progress, 0.62, 0.66, 0.71, 'left');
-
-    // Panel 4 (Interiér): RIGHT side
-    animatePanel(servicePanel4, progress, 0.84, 0.88, 0.92, 'right');
 
     // ── GRID BG ──
     const gridEl = document.getElementById('servicesGrid');
     if (gridEl) {
-      if (progress < 0.05) {
-        gridEl.style.opacity = '0';
-      } else if (progress < 0.15) {
-        gridEl.style.opacity = String(smoothstep((progress - 0.05) / 0.10) * 0.85);
-      } else if (progress < 0.90) {
-        gridEl.style.opacity = '0.85';
-      } else {
-        gridEl.style.opacity = String(0.85 * (1 - smoothstep((progress - 0.90) / 0.10)));
-      }
+      if (progress < 0.05) { gridEl.style.opacity = '0'; }
+      else if (progress < 0.15) { gridEl.style.opacity = String(smoothstep((progress - 0.05) / 0.10) * 0.85); }
+      else if (progress < 0.90) { gridEl.style.opacity = '0.85'; }
+      else { gridEl.style.opacity = String(0.85 * (1 - smoothstep((progress - 0.90) / 0.10))); }
     }
   }
 

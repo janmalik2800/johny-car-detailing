@@ -43,6 +43,7 @@ export class Car3DEngine {
       z-index: 6;
       pointer-events: none;
       opacity: 0;
+      will-change: opacity;
     `;
     document.body.prepend(this.canvas);
 
@@ -213,19 +214,26 @@ export class Car3DEngine {
 
           console.log(`🚗 BMW E30 M3 loaded — scale: ${scaleFactor.toFixed(3)}, dimensions: ${scaledSize.x.toFixed(2)}×${scaledSize.y.toFixed(2)}×${scaledSize.z.toFixed(2)}`);
 
-          // GPU WARM-UP — render 3 frames with car visible but canvas opacity 0
-          // Forces shader compilation BEFORE user sees the car → no stutter
+          // GPU WARM-UP — render frames with car visible but canvas opacity 0
+          // Pre-set materials to transparent to avoid shader recompilation stutter
           this.car.visible = true;
+          this.car.traverse((child) => {
+            if (child.isMesh && child.material) {
+              child.material.transparent = true;
+              child.material.opacity = 0.01;
+              child.material.needsUpdate = true;
+            }
+          });
           let warmupFrames = 0;
           const doWarmup = () => {
             this.renderer.render(this.scene, this.camera);
             warmupFrames++;
-            if (warmupFrames < 3) {
+            if (warmupFrames < 5) {
               requestAnimationFrame(doWarmup);
             } else {
               // Warm-up done — hide car again, scroll handler will show it
               this.car.visible = false;
-              console.log('✅ GPU warm-up complete (3 frames)');
+              console.log('✅ GPU warm-up complete (5 frames, materials pre-compiled)');
               dracoLoader.dispose();
               resolve(this.car);
             }
@@ -261,7 +269,7 @@ export class Car3DEngine {
       if (Math.abs(v - this._lastMaterialOpacity) > 0.01 || v === 0 || v === 1) {
         this.car.traverse((child) => {
           if (child.isMesh && child.material) {
-            child.material.transparent = v < 1;
+            // Always keep transparent true — avoids shader recompilation stutter
             child.material.opacity = v;
           }
         });
