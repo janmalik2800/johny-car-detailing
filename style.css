@@ -276,6 +276,18 @@ img, video {
   overflow: hidden;
 }
 
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(to bottom, transparent, #101010);
+  z-index: 5;
+  pointer-events: none;
+}
+
 
 /* --- Gold Particles Canvas --- */
 .hero__particles {
@@ -640,9 +652,29 @@ img, video {
 
 .services {
   position: relative;
-  height: 250vh;
-  background: #181818;
+  height: 450vh;
+  background: #101010;
   z-index: 2;
+}
+
+.services__grid {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  margin-bottom: -100vh;
+  background-image:
+    linear-gradient(to bottom, rgba(191, 149, 21, 0.12) 1px, transparent 1px),
+    linear-gradient(to right, rgba(191, 149, 21, 0.12) 1px, transparent 1px);
+  background-size: 66px 66px;
+  transform: perspective(800px) rotateX(28deg);
+  transform-origin: 50% 50%;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 70%);
 }
 
 .services__sticky {
@@ -704,6 +736,83 @@ img, video {
   margin-top: 8px;
 }
 
+/* ── Service detail (text LEFT, auto RIGHT) ── */
+.services__detail {
+  position: absolute;
+  top: 50%;
+  left: clamp(60px, 8vw, 140px);
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: left;
+  align-items: flex-start;
+  max-width: 480px;
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+.services__detail-tagline {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.services__detail-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 6.5rem);
+  line-height: 0.92;
+  color: var(--white);
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.services__detail-desc {
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 1.1vw, 1.2rem);
+  line-height: 1.8;
+  color: var(--white-dim);
+  font-weight: 300;
+  max-width: 420px;
+}
+
+.services__detail-line {
+  width: 60px;
+  height: 2px;
+  background: var(--gold);
+  margin-top: 8px;
+}
+
+/* ── Service CTA buttons ── */
+.services__detail-cta,
+.stack-card__cta {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  text-decoration: none;
+  border: 1px solid rgba(191, 149, 21, 0.4);
+  padding: 12px 28px;
+  border-radius: 6px;
+  margin-top: 12px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+}
+
+.services__detail-cta:hover,
+.stack-card__cta:hover {
+  background: var(--gold);
+  color: #101010;
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(191, 149, 21, 0.2);
+}
+
 @media (max-width: 768px) {
   .services__intro {
     right: 24px;
@@ -712,5 +821,311 @@ img, video {
 
   .services__intro-title {
     font-size: clamp(2rem, 10vw, 3.5rem);
+  }
+
+  .services__detail {
+    left: 24px;
+    max-width: 50%;
+  }
+
+  .services__detail-title {
+    font-size: clamp(2rem, 10vw, 3.5rem);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   LOOKBOOK — Full-Viewport Cinematic Showcase
+   Photo IS the section. No cards. No panels. Pure cinema.
+   ═══════════════════════════════════════════════════ */
+
+.lookbook {
+  position: relative;
+  height: 400vh; /* scroll budget: ~133vh per slide */
+  background: #000;
+  z-index: 3;
+}
+
+.lookbook__sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ── Slide — absolutely stacked, fullscreen ── */
+.lookbook__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  z-index: 0;
+  will-change: opacity, transform;
+}
+
+.lookbook__slide.is-active {
+  opacity: 1;
+  z-index: 1;
+}
+
+/* ── Image — full viewport cover ── */
+.lookbook__img-wrap {
+  position: absolute;
+  inset: -40px;  /* bleed for parallax movement */
+  z-index: 0;
+}
+
+.lookbook__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  filter: brightness(0.55) saturate(0.85) contrast(1.1);
+  transform: scale(1.08);
+  will-change: transform, filter;
+}
+
+/* ── Dark gradient overlay for text readability ── */
+.lookbook__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.05) 30%,
+      rgba(0, 0, 0, 0.05) 60%,
+      rgba(0, 0, 0, 0.6) 100%
+    ),
+    linear-gradient(90deg,
+      rgba(0, 0, 0, 0.5) 0%,
+      transparent 50%,
+      transparent 100%
+    );
+  pointer-events: none;
+}
+
+/* ── Content — text on photo ── */
+.lookbook__content {
+  position: absolute;
+  z-index: 2;
+  bottom: clamp(80px, 12vh, 160px);
+  left: clamp(40px, 6vw, 100px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 600px;
+  opacity: 0;
+  transform: translateY(60px);
+  will-change: opacity, transform;
+}
+
+/* Variant: right-aligned content */
+.lookbook__content--right {
+  left: auto;
+  right: clamp(40px, 6vw, 100px);
+  text-align: right;
+  align-items: flex-end;
+}
+
+.lookbook__content--right .lookbook__overlay + & {
+  /* For right slides, shift gradient */
+}
+
+/* Make right slide overlay gradient from right */
+.lookbook__slide:nth-child(2) .lookbook__overlay {
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.05) 30%,
+      rgba(0, 0, 0, 0.05) 60%,
+      rgba(0, 0, 0, 0.6) 100%
+    ),
+    linear-gradient(270deg,
+      rgba(0, 0, 0, 0.5) 0%,
+      transparent 50%,
+      transparent 100%
+    );
+}
+
+/* ── Number — large ghost behind title ── */
+.lookbook__num {
+  font-family: var(--font-display);
+  font-size: clamp(6rem, 15vw, 14rem);
+  line-height: 0.75;
+  color: rgba(191, 149, 21, 0.08);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  user-select: none;
+  position: absolute;
+  bottom: 100%;
+  left: -10px;
+  pointer-events: none;
+}
+
+.lookbook__content--right .lookbook__num {
+  left: auto;
+  right: -10px;
+}
+
+/* ── Tag ── */
+.lookbook__tag {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.35em;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-weight: 500;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8);
+}
+
+/* ── Title — dramatic, large ── */
+.lookbook__title {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 8vw, 8rem);
+  line-height: 0.88;
+  color: var(--white);
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  font-weight: 800;
+  text-shadow:
+    0 4px 40px rgba(0, 0, 0, 0.6),
+    0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Description ── */
+.lookbook__desc {
+  font-family: var(--font-body);
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 300;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.7);
+  max-width: 460px;
+}
+
+/* ── CTA ── */
+.lookbook__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--white);
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 14px 36px;
+  border-radius: 0;
+  margin-top: 10px;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+  width: fit-content;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lookbook__cta:hover {
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
+  letter-spacing: 0.2em;
+  box-shadow: 0 0 40px rgba(191, 149, 21, 0.3);
+}
+
+/* ── Counter — floating bottom-right ── */
+.lookbook__counter {
+  position: absolute;
+  bottom: clamp(24px, 4vh, 40px);
+  right: clamp(40px, 6vw, 100px);
+  z-index: 10;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-display);
+  pointer-events: none;
+}
+
+.lookbook__counter-current {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: -0.02em;
+  transition: all 0.3s ease;
+}
+
+.lookbook__counter-sep {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.2);
+  margin: 0 2px;
+  font-weight: 300;
+}
+
+.lookbook__counter-total {
+  font-size: 1rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Scroll hint — animated line ── */
+.lookbook__scroll-hint {
+  position: absolute;
+  bottom: clamp(24px, 4vh, 40px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.lookbook__scroll-line {
+  width: 1px;
+  height: 50px;
+  background: linear-gradient(180deg, var(--gold), transparent);
+  opacity: 0.5;
+  animation: lookbook-pulse 2s ease-in-out infinite;
+}
+
+@keyframes lookbook-pulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scaleY(0.6);
+    transform-origin: top;
+  }
+  50% {
+    opacity: 0.6;
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .lookbook {
+    height: 300vh;
+  }
+
+  .lookbook__content {
+    left: 24px;
+    right: 24px;
+    bottom: 100px;
+    max-width: none;
+  }
+
+  .lookbook__content--right {
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .lookbook__title {
+    font-size: clamp(2.5rem, 12vw, 4rem);
+  }
+
+  .lookbook__num {
+    font-size: 5rem;
+  }
+
+  .lookbook__counter {
+    right: 24px;
   }
 }

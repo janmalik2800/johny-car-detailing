@@ -551,30 +551,53 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
 
     // Před animací → nic
     if (scrollY < animStart) return;
-    // Za koncem services → drží finál
-    if (scrollY > servicesEnd) return;
+    // Za koncem services → skryj auto
+    if (scrollY > servicesEnd) {
+      car3d.setOpacity(0);
+      return;
+    }
 
     // Progress 0–1 přes celý rozsah (hero fadeEnd → 90% services)
     const rawProgress = (scrollY - animStart) / (animEnd - animStart);
     const progress = Math.max(0, Math.min(1, rawProgress));
 
-    // Auto zůstává viditelné
-    car3d.setOpacity(1);
+    // Auto opacity: plná 0→90%, fade-out 90→100%
+    if (progress < 0.90) {
+      car3d.setOpacity(1);
+    } else {
+      const fadeOut = (progress - 0.90) / 0.10;
+      car3d.setOpacity(1 - fadeOut);
+    }
 
-    // Auto dokončí pohyb na 45% progress (těsně PŘED textem na 100% = 50%)
+    // ═══ FÁZE 1: Auto jede doleva (0→45%) ═══
     const carP = Math.min(progress / 0.45, 1);
 
-    // ── AUTO: posun doleva ~400px (≈ 1.6 units) ──
-    const posX = carP * -1.6;
+    // Finální pozice fáze 1
+    const phase1X = -1.6;
+    const phase1Y = 0.8;
+    const phase1RotY = Math.PI * 0.15;
+    const phase1RotX = 0.4;
 
-    // positionY: auto jede nahoru (0 → +0.8)
-    const posY = carP * 0.8;
+    let posX, posY, rotY, rotX;
 
-    // rotationY: jenom lehce otočit (0 → ~27°)
-    const rotY = carP * Math.PI * 0.15;
+    if (progress <= 0.55) {
+      // Fáze 1: auto jede doleva
+      posX = carP * phase1X;
+      posY = carP * phase1Y;
+      rotY = carP * phase1RotY;
+      rotX = carP * phase1RotX;
+    } else {
+      // ═══ FÁZE 2: Auto jede doprava (55%→85%) ═══
+      const moveP = Math.min((progress - 0.55) / 0.30, 1);
+      // Smooth easing
+      const ease = moveP * moveP * (3 - 2 * moveP);
 
-    // rotationX: naklonit pro viditelnost střechy (0 → +23°)
-    const rotX = carP * 0.4;
+      // Z levé pozice (-1.6) na pravou (+1.6)
+      posX = phase1X + ease * (1.6 - phase1X);  // -1.6 → +1.6
+      posY = phase1Y;                             // drží výšku
+      rotY = phase1RotY + ease * (-Math.PI * 0.30 - phase1RotY);  // otočí se na druhou stranu
+      rotX = phase1RotX;                           // drží náklon
+    }
 
     car3d.update({
       positionX: posX,
@@ -583,7 +606,8 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
       rotationX: rotX,
     });
 
-    // ── NADPIS: fade-in od 30% do 50% progress ──
+    // ── INTRO: fade-in (30%→50%), hold, fade-out (55%→65%) ──
+    const serviceDetail1 = document.getElementById('serviceDetail1');
     if (servicesIntro) {
       if (progress < 0.30) {
         servicesIntro.style.opacity = '0';
@@ -592,9 +616,51 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
         const t = (progress - 0.30) / 0.20;
         servicesIntro.style.opacity = String(t);
         servicesIntro.style.transform = `translateY(-50%) translateX(${30 * (1 - t)}px)`;
-      } else {
+      } else if (progress < 0.55) {
         servicesIntro.style.opacity = '1';
         servicesIntro.style.transform = 'translateY(-50%) translateX(0)';
+      } else if (progress < 0.65) {
+        const t = (progress - 0.55) / 0.10;
+        servicesIntro.style.opacity = String(1 - t);
+        servicesIntro.style.transform = `translateY(-50%) translateX(${-30 * t}px)`;
+      } else {
+        servicesIntro.style.opacity = '0';
+      }
+    }
+
+    // ── SERVICE DETAIL 1: fade-in (70%→85%), fade-out (90%→98%) ──
+    if (serviceDetail1) {
+      if (progress < 0.70) {
+        serviceDetail1.style.opacity = '0';
+        serviceDetail1.style.transform = 'translateY(-50%) translateX(-30px)';
+      } else if (progress < 0.85) {
+        const t = (progress - 0.70) / 0.15;
+        serviceDetail1.style.opacity = String(t);
+        serviceDetail1.style.transform = `translateY(-50%) translateX(${-30 * (1 - t)}px)`;
+      } else if (progress < 0.90) {
+        serviceDetail1.style.opacity = '1';
+        serviceDetail1.style.transform = 'translateY(-50%) translateX(0)';
+      } else {
+        const t = (progress - 0.90) / 0.08;
+        serviceDetail1.style.opacity = String(Math.max(0, 1 - t));
+        serviceDetail1.style.transform = `translateY(-50%) translateX(${-20 * Math.min(1, t)}px)`;
+      }
+    }
+
+    // ── GRID BG: fade-in + 3D floor transform synced with car ──
+    const gridEl = document.getElementById('servicesGrid');
+    if (gridEl) {
+      // Opacity fade-in: 10% → 30%
+      if (progress < 0.10) {
+        gridEl.style.opacity = '0';
+      } else if (progress < 0.30) {
+        const t = (progress - 0.10) / 0.20;
+        gridEl.style.opacity = String(t * 0.85);
+      } else if (progress < 0.90) {
+        gridEl.style.opacity = '0.85';
+      } else {
+        const t = (progress - 0.90) / 0.10;
+        gridEl.style.opacity = String(0.85 * (1 - t));
       }
     }
   }
@@ -728,6 +794,126 @@ const burger = document.getElementById('navBurger');
 if (burger) {
   burger.addEventListener('click', () => {
     burger.classList.toggle('active');
+  });
+}
+
+
+/* ═════════════════════════════════════════════
+   LOOKBOOK — Cinematic Crossfade Engine
+   Full-viewport slides with scroll-driven transitions
+   ═════════════════════════════════════════════ */
+const lookbookEl = document.getElementById('lookbook');
+
+if (lookbookEl) {
+  const slides = lookbookEl.querySelectorAll('.lookbook__slide');
+  const counterCurrent = lookbookEl.querySelector('.lookbook__counter-current');
+  const totalSlides = slides.length;
+  let activeSlide = 0;
+
+  // Set initial state — first slide visible, rest hidden
+  slides.forEach((slide, i) => {
+    if (i === 0) {
+      slide.classList.add('is-active');
+      // Animate first slide's content in
+      const content = slide.querySelector('.lookbook__content');
+      if (content) {
+        gsap.set(content, { opacity: 1, y: 0 });
+      }
+    } else {
+      gsap.set(slide, { opacity: 0 });
+      gsap.set(slide.querySelector('.lookbook__img'), { scale: 1.15 });
+    }
+  });
+
+  // Main scroll timeline
+  ScrollTrigger.create({
+    trigger: lookbookEl,
+    start: 'top top',
+    end: 'bottom bottom',
+    scrub: 0,
+    onUpdate: (self) => {
+      const progress = self.progress;
+      // Each slide gets equal share of scroll
+      const slideProgress = progress * totalSlides;
+      const currentIndex = Math.min(Math.floor(slideProgress), totalSlides - 1);
+      const slideLocalProgress = slideProgress - currentIndex;
+
+      slides.forEach((slide, i) => {
+        const img = slide.querySelector('.lookbook__img');
+        const content = slide.querySelector('.lookbook__content');
+
+        if (i === currentIndex) {
+          // Current slide — fully visible, subtle parallax on image
+          gsap.set(slide, { opacity: 1, zIndex: 2 });
+          
+          if (img) {
+            // Parallax: image moves slightly as you scroll within this slide
+            const imgScale = 1.08 - (slideLocalProgress * 0.06);
+            const imgY = slideLocalProgress * -30;
+            gsap.set(img, { scale: imgScale, y: imgY });
+          }
+          
+          if (content) {
+            // Content visible, slight upward drift
+            const contentY = slideLocalProgress * -15;
+            gsap.set(content, { opacity: 1, y: contentY });
+          }
+
+          // If transitioning OUT (last 20% of this slide's progress)
+          if (slideLocalProgress > 0.8 && i < totalSlides - 1) {
+            const fadeOut = 1 - ((slideLocalProgress - 0.8) / 0.2);
+            gsap.set(content, { opacity: fadeOut });
+          }
+
+        } else if (i === currentIndex + 1) {
+          // Next slide — fading in during last portion of previous slide
+          if (slideLocalProgress > 0.7) {
+            const fadeIn = (slideLocalProgress - 0.7) / 0.3;
+            gsap.set(slide, { opacity: fadeIn, zIndex: 1 });
+            
+            if (img) {
+              const imgScale = 1.15 - (fadeIn * 0.07);
+              gsap.set(img, { scale: imgScale, y: 0 });
+            }
+            
+            if (content) {
+              const contentFade = Math.max(0, (fadeIn - 0.3) / 0.7);
+              const contentY = 60 - (contentFade * 60);
+              gsap.set(content, { opacity: contentFade, y: contentY });
+            }
+          } else {
+            gsap.set(slide, { opacity: 0, zIndex: 0 });
+          }
+
+        } else {
+          // All other slides — hidden
+          gsap.set(slide, { opacity: 0, zIndex: 0 });
+        }
+      });
+
+      // Update counter
+      if (counterCurrent && currentIndex !== activeSlide) {
+        activeSlide = currentIndex;
+        const num = String(currentIndex + 2).padStart(2, '0');
+        counterCurrent.textContent = num;
+      }
+    },
+  });
+
+  // Image brightness boost on each slide (subtle warm-up)
+  slides.forEach((slide) => {
+    const img = slide.querySelector('.lookbook__img');
+    if (img) {
+      gsap.to(img, {
+        filter: 'brightness(0.7) saturate(1) contrast(1.1)',
+        scrollTrigger: {
+          trigger: lookbookEl,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 2,
+        },
+      });
+    }
   });
 }
 

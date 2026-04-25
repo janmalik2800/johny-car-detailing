@@ -40,7 +40,7 @@ export class Car3DEngine {
       left: 0;
       width: 100%;
       height: 100vh;
-      z-index: 4;
+      z-index: 6;
       pointer-events: none;
       opacity: 0;
     `;
