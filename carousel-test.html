@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carousel Test — Johny Car Detailing</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════════════════════════════════════
+       RESET & TOKENS
+       ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #c8a846;
+      --gold-dim: rgba(191, 149, 21, 0.15);
+      --white: #f5f1eb;
+      --white-dim: rgba(245, 241, 235, 0.55);
+      --black: #101010;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-ui: 'Outfit', sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       3D CANVAS — Full viewport background
+       ═══════════════════════════════════════════ */
+    #car3dCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       AMBIENT GLOW — Radial gradient behind car
+       ═══════════════════════════════════════════ */
+    .ambient {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 55%,
+          rgba(191, 149, 21, 0.06) 0%,
+          transparent 70%
+        );
+    }
+
+
+    /* ═══════════════════════════════════════════
+       PAGE HEADER
+       ═══════════════════════════════════════════ */
+    .page-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 28px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .page-header__logo {
+      font-family: var(--font-ui);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+
+    .page-header__logo span {
+      color: var(--gold);
+      font-weight: 400;
+    }
+
+    .page-header__back {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      color: var(--white-dim);
+      text-decoration: none;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 20px;
+      border-radius: 100px;
+      transition: all 0.3s ease;
+    }
+
+    .page-header__back:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+
+    /* ═══════════════════════════════════════════
+       SECTION TITLE — floating above carousel
+       ═══════════════════════════════════════════ */
+    .section-title {
+      position: fixed;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      text-align: center;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title__tagline {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      letter-spacing: 0.25em;
+      color: var(--gold);
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .section-title h2 {
+      font-family: var(--font-display);
+      font-size: clamp(3.5rem, 8vw, 8rem);
+      line-height: 0.92;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .section-title__line {
+      width: 60px;
+      height: 2px;
+      background: var(--gold);
+      margin-top: 4px;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       CAROUSEL CONTAINER
+       ═══════════════════════════════════════════ */
+    .carousel {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       CAROUSEL CARD — Glassmorphism
+       ═══════════════════════════════════════════ */
+    .carousel__card {
+      position: absolute;
+      width: clamp(380px, 30vw, 520px);
+      aspect-ratio: 16 / 10;
+      border-radius: 20px;
+      overflow: hidden;
+      pointer-events: auto;
+      cursor: pointer;
+      will-change: transform, opacity, filter;
+      border: 1px solid rgba(191, 149, 21, 0.12);
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        0 0 1px rgba(191, 149, 21, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      transition: box-shadow 0.5s ease, border-color 0.5s ease;
+    }
+
+    .carousel__card:hover {
+      border-color: rgba(191, 149, 21, 0.35);
+      box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.7),
+        0 0 30px rgba(191, 149, 21, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    /* ── Background photo ── */
+    .carousel__card-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.5) saturate(0.7);
+      transition: filter 0.6s ease, transform 0.6s ease;
+      transform: scale(1.05);
+    }
+
+    .carousel__card:hover .carousel__card-bg {
+      filter: brightness(0.65) saturate(0.85);
+      transform: scale(1.0);
+    }
+
+    /* ── Frosted overlay ── */
+    .carousel__card-glass {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 10, 0.2);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    /* ── Gold gradient at bottom ── */
+    .carousel__card-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(191, 149, 21, 0.04) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* ── Content ── */
+    .carousel__card-content {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: clamp(24px, 3vw, 36px);
+      gap: 8px;
+    }
+
+    .carousel__tag {
+      font-family: var(--font-body);
+      font-size: 0.68rem;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .carousel__title {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4vw, 3.8rem);
+      line-height: 0.92;
+      color: var(--white);
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+
+    .carousel__desc {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--white-dim);
+      font-weight: 300;
+      max-width: 340px;
+      margin-top: 4px;
+    }
+
+    .carousel__cta {
+      display: inline-block;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      text-decoration: none;
+      text-transform: uppercase;
+      margin-top: 8px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .carousel__card.is-active .carousel__cta {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .carousel__cta:hover {
+      letter-spacing: 0.18em;
+    }
+
+    /* ── Large ghost number ── */
+    .carousel__ghost-num {
+      position: absolute;
+      top: clamp(16px, 2vw, 28px);
+      right: clamp(20px, 3vw, 36px);
+      font-family: var(--font-display);
+      font-size: clamp(4rem, 7vw, 6rem);
+      line-height: 1;
+      color: rgba(191, 149, 21, 0.08);
+      font-weight: 400;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       SCROLL HINT
+       ═══════════════════════════════════════════ */
+    .scroll-hint {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .scroll-hint__text {
+      font-family: var(--font-body);
+      font-size: 0.68rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--white-dim);
+    }
+
+    .scroll-hint__line {
+      width: 1px;
+      height: 32px;
+      background: linear-gradient(180deg, var(--gold), transparent);
+      opacity: 0.4;
+      animation: hint-pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes hint-pulse {
+      0%, 100% { opacity: 0.15; transform: scaleY(0.5); }
+      50% { opacity: 0.5; transform: scaleY(1); }
+    }
+
+
+    /* ═══════════════════════════════════════════
+       COUNTER — top-right slot indicator
+       ═══════════════════════════════════════════ */
+    .counter {
+      position: fixed;
+      bottom: 36px;
+      right: 48px;
+      z-index: 100;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-family: var(--font-display);
+      pointer-events: none;
+    }
+
+    .counter__current {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: -0.02em;
+      transition: all 0.3s ease;
+      min-width: 2ch;
+      text-align: right;
+    }
+
+    .counter__sep {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.15);
+      font-weight: 300;
+    }
+
+    .counter__total {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+
+    /* ═══════════════════════════════════════════
+       NAV ARROWS — keyboard hint
+       ═══════════════════════════════════════════ */
+    .nav-arrows {
+      position: fixed;
+      bottom: 36px;
+      left: 48px;
+      z-index: 100;
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-arrows__btn {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.02);
+      color: var(--white-dim);
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .nav-arrows__btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(191, 149, 21, 0.06);
+    }
+
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+       ═══════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .carousel__card {
+        width: 85vw;
+        max-width: 380px;
+      }
+
+      .page-header { padding: 20px 24px; }
+      .counter { right: 24px; }
+      .nav-arrows { left: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D Canvas is auto-created by car3d.js init() -->
+
+  <!-- Ambient glow -->
+  <div class="ambient"></div>
+
+  <!-- Ghost title behind carousel -->
+  <div class="section-title">
+    <span class="section-title__tagline">Naše služby</span>
+    <h2>CO PRO VÁS MŮŽU UDĚLAT</h2>
+    <div class="section-title__line"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="page-header">
+    <div class="page-header__logo">JOHNY <span>CAR DETAILING</span></div>
+    <a href="/" class="page-header__back">← Zpět na hlavní</a>
+  </header>
+
+  <!-- ═══════════════════════════════════════════
+       CAROUSEL — 4 service cards
+       ═══════════════════════════════════════════ -->
+  <div class="carousel" id="carousel">
+
+    <!-- Card 1 — PPF Fólie -->
+    <div class="carousel__card" data-index="0">
+      <div class="carousel__card-bg" style="background-image: url('/img/Folie.webp')"></div>
+      <div class="carousel__card-glass"></div>
+      <div class="carousel__card-gradient"></div>
+      <span class="carousel__ghost-num">01</span>
+      <div class="carousel__card-content">
+        <span class="carousel__tag">01 · PPF Ochrana</span>
+        <h3 class="carousel__title">PPF<br/>FÓLIE</h3>
+        <p class="carousel__desc">Neviditelný štít proti kamínkům, škrábancům a UV záření. Certifikovaná XPEL instalace s 10letou zárukou.</p>
+        <a href="/ppf-folie.html" class="carousel__cta">Zjistit více →</a>
+      </div>
+    </div>
+
+    <!-- Card 2 — Leštění laku -->
+    <div class="carousel__card" data-index="1">
+      <div class="carousel__card-bg" style="background-image: url('/img/lesteni.webp')"></div>
+      <div class="carousel__card-glass"></div>
+      <div class="carousel__card-gradient"></div>
+      <span class="carousel__ghost-num">02</span>
+      <div class="carousel__card-content">
+        <span class="carousel__tag">02 · Korekce & lesk</span>
+        <h3 class="carousel__title">LEŠTĚNÍ<br/>LAKU</h3>
+        <p class="carousel__desc">Odstranění mikro-škrábanců, hologramů a oxidace. Váš lak bude zářit jako v den, kdy sjel z výrobní linky.</p>
+        <a href="/lesteni-laku.html" class="carousel__cta">Zjistit více →</a>
+      </div>
+    </div>
+
+    <!-- Card 3 — Keramická ochrana -->
+    <div class="carousel__card" data-index="2">
+      <div class="carousel__card-bg" style="background-image: url('/img/keramika.webp')"></div>
+      <div class="carousel__card-glass"></div>
+      <div class="carousel__card-gradient"></div>
+      <span class="carousel__ghost-num">03</span>
+      <div class="carousel__card-content">
+        <span class="carousel__tag">03 · Nano ochrana</span>
+        <h3 class="carousel__title">KERAMICKÁ<br/>OCHRANA</h3>
+        <p class="carousel__desc">Profesionální nano-keramická ochrana s garancí až 5 let. Hydrofobní efekt, snadná údržba, extrémní lesk.</p>
+        <a href="/keramicka-ochrana.html" class="carousel__cta">Zjistit více →</a>
+      </div>
+    </div>
+
+    <!-- Card 4 — Čištění interiéru -->
+    <div class="carousel__card" data-index="3">
+      <div class="carousel__card-bg" style="background-image: url('/img/interier.webp')"></div>
+      <div class="carousel__card-glass"></div>
+      <div class="carousel__card-gradient"></div>
+      <span class="carousel__ghost-num">04</span>
+      <div class="carousel__card-content">
+        <span class="carousel__tag">04 · Hloubkové čištění</span>
+        <h3 class="carousel__title">ČIŠTĚNÍ<br/>INTERIÉRU</h3>
+        <p class="carousel__desc">Hloubkové čištění, kondicionování kůže a renovace plastů. Interiér jako z autosalónu.</p>
+        <a href="/cisteni-interieru.html" class="carousel__cta">Zjistit více →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Navigation arrows -->
+  <div class="nav-arrows">
+    <button class="nav-arrows__btn" id="navPrev" aria-label="Previous">◀</button>
+    <button class="nav-arrows__btn" id="navNext" aria-label="Next">▶</button>
+  </div>
+
+  <!-- Counter -->
+  <div class="counter">
+    <span class="counter__current" id="counterCurrent">01</span>
+    <span class="counter__sep">/</span>
+    <span class="counter__total">04</span>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="scroll-hint" id="scrollHint">
+    <span class="scroll-hint__text">Scroll to explore</span>
+    <div class="scroll-hint__line"></div>
+  </div>
+
+  <!-- Load carousel engine -->
+  <script type="module" src="/carousel.js"></script>
+
+</body>
+</html>

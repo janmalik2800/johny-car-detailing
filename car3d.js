@@ -305,6 +305,41 @@ export class Car3DEngine {
 
 
   /* ─────────────────────────────────────────────
+     UPDATE CAMERA — Pozice + LookAt + FOV (voláno ze scroll handleru)
+     ───────────────────────────────────────────── */
+  updateCamera(state) {
+    if (!this.camera) return;
+
+    if (state.positionX !== undefined) this.camera.position.x = state.positionX;
+    if (state.positionY !== undefined) this.camera.position.y = state.positionY;
+    if (state.positionZ !== undefined) this.camera.position.z = state.positionZ;
+
+    if (state.fov !== undefined && Math.abs(this.camera.fov - state.fov) > 0.1) {
+      this.camera.fov = state.fov;
+      this.camera.updateProjectionMatrix();
+    }
+
+    // LookAt — must be called after position is set
+    if (state.lookAtX !== undefined || state.lookAtY !== undefined || state.lookAtZ !== undefined) {
+      this.camera.lookAt(
+        state.lookAtX ?? 0,
+        state.lookAtY ?? 0.6,
+        state.lookAtZ ?? 0
+      );
+    }
+  }
+
+  /** Default camera state for reference/reset */
+  getCameraDefaults() {
+    return {
+      positionX: 0, positionY: 0.3, positionZ: 6,
+      lookAtX: 0, lookAtY: 0.6, lookAtZ: 0,
+      fov: 35,
+    };
+  }
+
+
+  /* ─────────────────────────────────────────────
      RENDER LOOP
      ───────────────────────────────────────────── */
   _animate() {

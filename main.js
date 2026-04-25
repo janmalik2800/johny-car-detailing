@@ -530,97 +530,287 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
   gsap.ticker.add(updateCarState);
 
   /* ═════════════════════════════════════════════
-     SERVICES — INTRO SCROLLYTELLING
-     Auto jede doleva + rotuje (střecha viditelná).
-     Vše lineárně mapované na scroll.
+     SERVICES — FULL SCROLLYTELLING ENGINE
+     Phases: Intro → PPF → Camera transition → 3× Service panels (ping-pong)
+     Single section (1200vh), auto moves L↔R, camera goes bird's-eye.
      ═════════════════════════════════════════════ */
   const servicesIntro = document.getElementById('servicesIntro');
+  const serviceDetail1 = document.getElementById('serviceDetail1');
+  const servicePanel2 = document.getElementById('servicePanel2');
+  const servicePanel3 = document.getElementById('servicePanel3');
+  const servicePanel4 = document.getElementById('servicePanel4');
 
-  // Animace auta začíná od konce hero (fadeEnd) a končí na 90% services
+  // Animation range constants
   const HERO_VH_REF = 340;
+
+  // Smooth easing function (smoothstep)
+  function smoothstep(t) {
+    t = Math.max(0, Math.min(1, t));
+    return t * t * (3 - 2 * t);
+  }
+
+  // Linear interpolation
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  // Animate a panel: opacity + translateY + translateX
+  function animatePanel(el, progress, fadeIn, holdEnd, fadeOut, side) {
+    if (!el) return;
+    const offsetX = side === 'right' ? 40 : -40;
+
+    if (progress < fadeIn) {
+      el.style.opacity = '0';
+      el.style.transform = `translateY(-50%) translateX(${offsetX}px)`;
+    } else if (progress < holdEnd) {
+      // Fade in
+      const dur = holdEnd - fadeIn;
+      const inP = dur > 0 ? Math.min((progress - fadeIn) / (dur * 0.4), 1) : 1;
+      const ease = smoothstep(inP);
+      el.style.opacity = String(ease);
+      el.style.transform = `translateY(-50%) translateX(${offsetX * (1 - ease)}px)`;
+    } else if (progress < fadeOut) {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(-50%) translateX(0)';
+    } else if (progress < fadeOut + 0.03) {
+      const outP = (progress - fadeOut) / 0.03;
+      const ease = smoothstep(outP);
+      el.style.opacity = String(1 - ease);
+      el.style.transform = `translateY(-50%) translateX(${-offsetX * 0.5 * ease}px)`;
+    } else {
+      el.style.opacity = '0';
+    }
+  }
 
   function updateServicesState() {
     if (!servicesEl) return;
 
     const vh = window.innerHeight;
     const heroH = (HERO_VH_REF / 100) * vh;
-    const animStart = heroH * 0.70;  // fadeEnd — auto právě viditelné
+    const animStart = heroH * 0.70;
     const servicesEnd = servicesEl.offsetTop + servicesEl.offsetHeight;
-    const animEnd = servicesEnd * 0.90; // 90% celého rozsahu
+    const animEnd = servicesEnd * 0.92;
     const scrollY = window.scrollY;
 
-    // Před animací → nic
     if (scrollY < animStart) return;
-    // Za koncem services → skryj auto
     if (scrollY > servicesEnd) {
       car3d.setOpacity(0);
       return;
     }
 
-    // Progress 0–1 přes celý rozsah (hero fadeEnd → 90% services)
     const rawProgress = (scrollY - animStart) / (animEnd - animStart);
     const progress = Math.max(0, Math.min(1, rawProgress));
 
-    // Auto opacity: plná 0→90%, fade-out 90→100%
-    if (progress < 0.90) {
+    // ═══════════════════════════════════════════
+    // COMPRESSION: Old 450vh phases → first ~35% of 1200vh
+    // Ratio: 450/1200 ≈ 0.375, but we use animEnd math
+    // Old thresholds mapped: multiply by ~0.41
+    // ═══════════════════════════════════════════
+
+    // ── CAR OPACITY ──
+    // Always visible during animation, fade-out at very end
+    if (progress < 0.93) {
       car3d.setOpacity(1);
     } else {
-      const fadeOut = (progress - 0.90) / 0.10;
-      car3d.setOpacity(1 - fadeOut);
+      const fadeOut = (progress - 0.93) / 0.07;
+      car3d.setOpacity(1 - smoothstep(fadeOut));
     }
 
-    // ═══ FÁZE 1: Auto jede doleva (0→45%) ═══
-    const carP = Math.min(progress / 0.45, 1);
+     // ═══ PHASE 1: INTRO — Car moves left (0→15%) ═══
+    // ═══ PHASE 2: PPF DETAIL — Car moves right (18→28%) ═══
 
-    // Finální pozice fáze 1
+    const phase1End = 0.15;
     const phase1X = -1.6;
     const phase1Y = 0.8;
     const phase1RotY = Math.PI * 0.15;
     const phase1RotX = 0.4;
 
+    const phase2Start = 0.18;
+    const phase2End = 0.28;
+    const phase2X = 1.6;
+    const phase2RotY = -Math.PI * 0.30;
+
+    // ═══ PHASE 3: Camera transition + scale down (28→38%) ═══
+    // Longer transition — this is the cinematic moment
+    const birdStart = 0.28;
+    const birdEnd = 0.38;
+
+    // ═══ PHASE 4-6: Service panels with ping-pong ═══
+    // Longer transitions between panels, shorter text holds
+    // Panel 2: 38→52% — car LEFT, panel RIGHT
+    // Transition: 52→60%
+    // Panel 3: 60→74% — car RIGHT, panel LEFT
+    // Transition: 74→82%
+    // Panel 4: 82→94% — car LEFT, panel RIGHT
+
+    const p2Start = 0.38, p2End = 0.52;
+    const p3Start = 0.60, p3End = 0.74;
+    const p4Start = 0.82, p4End = 0.94;
+
+    // Car positions for ping-pong
+    const carLeftX = -1.8;
+    const carRightX = 1.8;
+    const carBirdY = 0.6;
+    const carBirdRotX = 0.55;
+    const carBirdScale = 0.5; // SCALE DOWN — car is much smaller in bird's-eye
+
+    // ── COMPUTE CAR STATE ──
     let posX, posY, rotY, rotX;
+    let carScale = 1.0;
 
-    if (progress <= 0.55) {
-      // Fáze 1: auto jede doleva
-      posX = carP * phase1X;
-      posY = carP * phase1Y;
-      rotY = carP * phase1RotY;
-      rotX = carP * phase1RotX;
+    // Camera state
+    let camX = 0, camY = 0.3, camZ = 6;
+    let lookX = 0, lookY = 0.6, lookZ = 0;
+    let fov = 35;
+
+    if (progress <= phase1End) {
+      // Phase 1: car moves left
+      const p = Math.min(progress / phase1End, 1);
+      const ease = smoothstep(p);
+      posX = ease * phase1X;
+      posY = ease * phase1Y;
+      rotY = ease * phase1RotY;
+      rotX = ease * phase1RotX;
+    } else if (progress <= phase2Start) {
+      // Hold at phase 1 end
+      posX = phase1X;
+      posY = phase1Y;
+      rotY = phase1RotY;
+      rotX = phase1RotX;
+    } else if (progress <= phase2End) {
+      // Phase 2: car moves right
+      const p = smoothstep((progress - phase2Start) / (phase2End - phase2Start));
+      posX = lerp(phase1X, phase2X, p);
+      posY = phase1Y;
+      rotY = lerp(phase1RotY, phase2RotY, p);
+      rotX = phase1RotX;
+    } else if (progress <= birdEnd) {
+      // Phase 3: Camera transition + SCALE DOWN
+      // Long, cinematic transition — this is where the magic happens
+      const p = smoothstep((progress - birdStart) / (birdEnd - birdStart));
+      posX = lerp(phase2X, carLeftX, p);
+      posY = lerp(phase1Y, carBirdY, p);
+      rotY = lerp(phase2RotY, Math.PI * 0.12, p);
+      rotX = lerp(phase1RotX, carBirdRotX, p);
+      carScale = lerp(1.0, carBirdScale, p);
+
+      // Camera transition: side view → elevated 3/4 view
+      camX = lerp(0, carLeftX * 0.3, p);
+      camY = lerp(0.3, 3.5, p);
+      camZ = lerp(6, 4.5, p);
+      lookX = lerp(0, carLeftX * 0.5, p);
+      lookY = lerp(0.6, 0, p);
+      fov = lerp(35, 28, p);
+    } else if (progress <= p2End) {
+      // Panel 2: car LEFT, stable, scaled down
+      posX = carLeftX;
+      posY = carBirdY;
+      rotY = Math.PI * 0.12;
+      rotX = carBirdRotX;
+      carScale = carBirdScale;
+      camX = carLeftX * 0.3;
+      camY = 3.5;
+      camZ = 4.5;
+      lookX = carLeftX * 0.5;
+      lookY = 0;
+      fov = 28;
+    } else if (progress <= p3Start) {
+      // Transition: car LEFT → RIGHT (LONGER — 8% of scroll)
+      const p = smoothstep((progress - p2End) / (p3Start - p2End));
+      posX = lerp(carLeftX, carRightX, p);
+      posY = carBirdY;
+      rotY = lerp(Math.PI * 0.12, -Math.PI * 0.12, p);
+      rotX = carBirdRotX;
+      carScale = carBirdScale;
+      camX = lerp(carLeftX * 0.3, carRightX * 0.3, p);
+      camY = 3.5;
+      camZ = 4.5;
+      lookX = lerp(carLeftX * 0.5, carRightX * 0.5, p);
+      lookY = 0;
+      fov = 28;
+    } else if (progress <= p3End) {
+      // Panel 3: car RIGHT, stable
+      posX = carRightX;
+      posY = carBirdY;
+      rotY = -Math.PI * 0.12;
+      rotX = carBirdRotX;
+      carScale = carBirdScale;
+      camX = carRightX * 0.3;
+      camY = 3.5;
+      camZ = 4.5;
+      lookX = carRightX * 0.5;
+      lookY = 0;
+      fov = 28;
+    } else if (progress <= p4Start) {
+      // Transition: car RIGHT → LEFT (LONGER — 8% of scroll)
+      const p = smoothstep((progress - p3End) / (p4Start - p3End));
+      posX = lerp(carRightX, carLeftX, p);
+      posY = carBirdY;
+      rotY = lerp(-Math.PI * 0.12, Math.PI * 0.12, p);
+      rotX = carBirdRotX;
+      carScale = carBirdScale;
+      camX = lerp(carRightX * 0.3, carLeftX * 0.3, p);
+      camY = 3.5;
+      camZ = 4.5;
+      lookX = lerp(carRightX * 0.5, carLeftX * 0.5, p);
+      lookY = 0;
+      fov = 28;
+    } else if (progress <= p4End) {
+      // Panel 4: car LEFT, stable
+      posX = carLeftX;
+      posY = carBirdY;
+      rotY = Math.PI * 0.12;
+      rotX = carBirdRotX;
+      carScale = carBirdScale;
+      camX = carLeftX * 0.3;
+      camY = 3.5;
+      camZ = 4.5;
+      lookX = carLeftX * 0.5;
+      lookY = 0;
+      fov = 28;
     } else {
-      // ═══ FÁZE 2: Auto jede doprava (55%→85%) ═══
-      const moveP = Math.min((progress - 0.55) / 0.30, 1);
-      // Smooth easing
-      const ease = moveP * moveP * (3 - 2 * moveP);
-
-      // Z levé pozice (-1.6) na pravou (+1.6)
-      posX = phase1X + ease * (1.6 - phase1X);  // -1.6 → +1.6
-      posY = phase1Y;                             // drží výšku
-      rotY = phase1RotY + ease * (-Math.PI * 0.30 - phase1RotY);  // otočí se na druhou stranu
-      rotX = phase1RotX;                           // drží náklon
+      // Outro: car stays, just fading out
+      posX = carLeftX;
+      posY = carBirdY;
+      rotY = Math.PI * 0.12;
+      rotX = carBirdRotX;
+      carScale = carBirdScale;
+      camX = carLeftX * 0.3;
+      camY = 3.5;
+      camZ = 4.5;
+      lookX = carLeftX * 0.5;
+      lookY = 0;
+      fov = 28;
     }
 
-    car3d.update({
-      positionX: posX,
-      positionY: posY,
-      rotationY: rotY,
-      rotationX: rotX,
-    });
+    // Apply car state (now includes scale)
+    car3d.update({ positionX: posX, positionY: posY, rotationY: rotY, rotationX: rotX, scale: carScale });
 
-    // ── INTRO: fade-in (30%→50%), hold, fade-out (55%→65%) ──
-    const serviceDetail1 = document.getElementById('serviceDetail1');
+    // Apply camera state (only during bird's-eye phases)
+    if (progress >= birdStart) {
+      car3d.updateCamera({
+        positionX: camX, positionY: camY, positionZ: camZ,
+        lookAtX: lookX, lookAtY: lookY, lookAtZ: lookZ,
+        fov: fov,
+      });
+    }
+
+    // ═══ TEXT ANIMATIONS ═══
+
+    // Intro text: fade-in 10→14%, hold 14→16%, fade-out 16→19%
     if (servicesIntro) {
-      if (progress < 0.30) {
+      if (progress < 0.10) {
         servicesIntro.style.opacity = '0';
         servicesIntro.style.transform = 'translateY(-50%) translateX(30px)';
-      } else if (progress < 0.50) {
-        const t = (progress - 0.30) / 0.20;
+      } else if (progress < 0.14) {
+        const t = smoothstep((progress - 0.10) / 0.04);
         servicesIntro.style.opacity = String(t);
         servicesIntro.style.transform = `translateY(-50%) translateX(${30 * (1 - t)}px)`;
-      } else if (progress < 0.55) {
+      } else if (progress < 0.16) {
         servicesIntro.style.opacity = '1';
         servicesIntro.style.transform = 'translateY(-50%) translateX(0)';
-      } else if (progress < 0.65) {
-        const t = (progress - 0.55) / 0.10;
+      } else if (progress < 0.19) {
+        const t = smoothstep((progress - 0.16) / 0.03);
         servicesIntro.style.opacity = String(1 - t);
         servicesIntro.style.transform = `translateY(-50%) translateX(${-30 * t}px)`;
       } else {
@@ -628,44 +818,66 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
       }
     }
 
-    // ── SERVICE DETAIL 1: fade-in (70%→85%), fade-out (90%→98%) ──
+    // PPF detail: fade-in 22→25%, hold 25→27%, fade-out 27→30%
     if (serviceDetail1) {
-      if (progress < 0.70) {
+      if (progress < 0.22) {
         serviceDetail1.style.opacity = '0';
         serviceDetail1.style.transform = 'translateY(-50%) translateX(-30px)';
-      } else if (progress < 0.85) {
-        const t = (progress - 0.70) / 0.15;
+      } else if (progress < 0.25) {
+        const t = smoothstep((progress - 0.22) / 0.03);
         serviceDetail1.style.opacity = String(t);
         serviceDetail1.style.transform = `translateY(-50%) translateX(${-30 * (1 - t)}px)`;
-      } else if (progress < 0.90) {
+      } else if (progress < 0.27) {
         serviceDetail1.style.opacity = '1';
         serviceDetail1.style.transform = 'translateY(-50%) translateX(0)';
+      } else if (progress < 0.30) {
+        const t = smoothstep((progress - 0.27) / 0.03);
+        serviceDetail1.style.opacity = String(1 - t);
+        serviceDetail1.style.transform = `translateY(-50%) translateX(${-20 * t}px)`;
       } else {
-        const t = (progress - 0.90) / 0.08;
-        serviceDetail1.style.opacity = String(Math.max(0, 1 - t));
-        serviceDetail1.style.transform = `translateY(-50%) translateX(${-20 * Math.min(1, t)}px)`;
+        serviceDetail1.style.opacity = '0';
       }
     }
 
-    // ── GRID BG: fade-in + 3D floor transform synced with car ──
+    // Panel 2 (Leštění): RIGHT side — appears shortly after car arrives
+    animatePanel(servicePanel2, progress, 0.40, 0.44, 0.49, 'right');
+
+    // Panel 3 (Keramika): LEFT side
+    animatePanel(servicePanel3, progress, 0.62, 0.66, 0.71, 'left');
+
+    // Panel 4 (Interiér): RIGHT side
+    animatePanel(servicePanel4, progress, 0.84, 0.88, 0.92, 'right');
+
+    // ── GRID BG ──
     const gridEl = document.getElementById('servicesGrid');
     if (gridEl) {
-      // Opacity fade-in: 10% → 30%
-      if (progress < 0.10) {
+      if (progress < 0.05) {
         gridEl.style.opacity = '0';
-      } else if (progress < 0.30) {
-        const t = (progress - 0.10) / 0.20;
-        gridEl.style.opacity = String(t * 0.85);
+      } else if (progress < 0.15) {
+        gridEl.style.opacity = String(smoothstep((progress - 0.05) / 0.10) * 0.85);
       } else if (progress < 0.90) {
         gridEl.style.opacity = '0.85';
       } else {
-        const t = (progress - 0.90) / 0.10;
-        gridEl.style.opacity = String(0.85 * (1 - t));
+        gridEl.style.opacity = String(0.85 * (1 - smoothstep((progress - 0.90) / 0.10)));
       }
     }
   }
 
   gsap.ticker.add(updateServicesState);
+
+  // Reset camera when scrolling back above services
+  gsap.ticker.add(() => {
+    const vh = window.innerHeight;
+    const heroH = (HERO_VH_REF / 100) * vh;
+    const animStart = heroH * 0.70;
+    if (window.scrollY < animStart) {
+      car3d.updateCamera({
+        positionX: 0, positionY: 0.3, positionZ: 6,
+        lookAtX: 0, lookAtY: 0.6, lookAtZ: 0,
+        fov: 35,
+      });
+    }
+  });
 
 }).catch((err) => {
   console.warn('3D car not available:', err);
@@ -797,125 +1009,6 @@ if (burger) {
   });
 }
 
-
-/* ═════════════════════════════════════════════
-   LOOKBOOK — Cinematic Crossfade Engine
-   Full-viewport slides with scroll-driven transitions
-   ═════════════════════════════════════════════ */
-const lookbookEl = document.getElementById('lookbook');
-
-if (lookbookEl) {
-  const slides = lookbookEl.querySelectorAll('.lookbook__slide');
-  const counterCurrent = lookbookEl.querySelector('.lookbook__counter-current');
-  const totalSlides = slides.length;
-  let activeSlide = 0;
-
-  // Set initial state — first slide visible, rest hidden
-  slides.forEach((slide, i) => {
-    if (i === 0) {
-      slide.classList.add('is-active');
-      // Animate first slide's content in
-      const content = slide.querySelector('.lookbook__content');
-      if (content) {
-        gsap.set(content, { opacity: 1, y: 0 });
-      }
-    } else {
-      gsap.set(slide, { opacity: 0 });
-      gsap.set(slide.querySelector('.lookbook__img'), { scale: 1.15 });
-    }
-  });
-
-  // Main scroll timeline
-  ScrollTrigger.create({
-    trigger: lookbookEl,
-    start: 'top top',
-    end: 'bottom bottom',
-    scrub: 0,
-    onUpdate: (self) => {
-      const progress = self.progress;
-      // Each slide gets equal share of scroll
-      const slideProgress = progress * totalSlides;
-      const currentIndex = Math.min(Math.floor(slideProgress), totalSlides - 1);
-      const slideLocalProgress = slideProgress - currentIndex;
-
-      slides.forEach((slide, i) => {
-        const img = slide.querySelector('.lookbook__img');
-        const content = slide.querySelector('.lookbook__content');
-
-        if (i === currentIndex) {
-          // Current slide — fully visible, subtle parallax on image
-          gsap.set(slide, { opacity: 1, zIndex: 2 });
-          
-          if (img) {
-            // Parallax: image moves slightly as you scroll within this slide
-            const imgScale = 1.08 - (slideLocalProgress * 0.06);
-            const imgY = slideLocalProgress * -30;
-            gsap.set(img, { scale: imgScale, y: imgY });
-          }
-          
-          if (content) {
-            // Content visible, slight upward drift
-            const contentY = slideLocalProgress * -15;
-            gsap.set(content, { opacity: 1, y: contentY });
-          }
-
-          // If transitioning OUT (last 20% of this slide's progress)
-          if (slideLocalProgress > 0.8 && i < totalSlides - 1) {
-            const fadeOut = 1 - ((slideLocalProgress - 0.8) / 0.2);
-            gsap.set(content, { opacity: fadeOut });
-          }
-
-        } else if (i === currentIndex + 1) {
-          // Next slide — fading in during last portion of previous slide
-          if (slideLocalProgress > 0.7) {
-            const fadeIn = (slideLocalProgress - 0.7) / 0.3;
-            gsap.set(slide, { opacity: fadeIn, zIndex: 1 });
-            
-            if (img) {
-              const imgScale = 1.15 - (fadeIn * 0.07);
-              gsap.set(img, { scale: imgScale, y: 0 });
-            }
-            
-            if (content) {
-              const contentFade = Math.max(0, (fadeIn - 0.3) / 0.7);
-              const contentY = 60 - (contentFade * 60);
-              gsap.set(content, { opacity: contentFade, y: contentY });
-            }
-          } else {
-            gsap.set(slide, { opacity: 0, zIndex: 0 });
-          }
-
-        } else {
-          // All other slides — hidden
-          gsap.set(slide, { opacity: 0, zIndex: 0 });
-        }
-      });
-
-      // Update counter
-      if (counterCurrent && currentIndex !== activeSlide) {
-        activeSlide = currentIndex;
-        const num = String(currentIndex + 2).padStart(2, '0');
-        counterCurrent.textContent = num;
-      }
-    },
-  });
-
-  // Image brightness boost on each slide (subtle warm-up)
-  slides.forEach((slide) => {
-    const img = slide.querySelector('.lookbook__img');
-    if (img) {
-      gsap.to(img, {
-        filter: 'brightness(0.7) saturate(1) contrast(1.1)',
-        scrollTrigger: {
-          trigger: lookbookEl,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 2,
-        },
-      });
-    }
-  });
-}
 
 
 /* ═════════════════════════════════════════════
