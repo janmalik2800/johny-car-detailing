@@ -458,9 +458,9 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
   // Vynutit skrytí na startu
   car3d.setOpacity(0);
 
-  // Hero výška = 340vh, počítáme z CSS, ne z offsetHeight
+  // Hero výška = 440vh, počítáme z CSS, ne z offsetHeight
   // (offsetHeight může být nespolehlivý při prvním renderování)
-  const HERO_VH = 340;
+  const HERO_VH = 440;
 
   // Služby element pro detekci konce
   const servicesEl = document.querySelector('.services');
@@ -468,13 +468,13 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
   // ── HLAVNÍ SCROLL HANDLER — volaný každý frame ──
   function updateCarState() {
     const vh = window.innerHeight;
-    const heroHeight = (HERO_VH / 100) * vh; // 340vh v pixelech
+    const heroHeight = (HERO_VH / 100) * vh; // 440vh v pixelech
     const scrollY = window.scrollY;
 
     // Pixelové hranice pro fáze
-    const fadeStart = heroHeight * 0.55;   // auto začne fade-in (později)
-    const fadeEnd   = heroHeight * 0.70;   // auto plně viditelné (rychlejší)
-    const moveStart = heroHeight * 0.82;   // auto jede dopředu
+    const fadeStart = heroHeight * 0.45;   // auto začne fade-in (dříve)
+    const fadeEnd   = heroHeight * 0.58;   // auto plně viditelné
+    const moveStart = heroHeight * 0.88;   // auto jede dopředu (odloženo)
     const moveEnd   = heroHeight * 0.98;   // konec animace
     const servicesTop = servicesEl ? servicesEl.offsetTop : heroHeight;
 
@@ -494,12 +494,12 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
 
     // (Phase 3c odstraněna — auto zůstává statické v hero)
 
-    // ── OVERLAY TEXT — fade out (78% → 85%) ──
-    // Pod 78% ho NEŘÍDÍME — jiné animace ho zobrazují
+    // ── OVERLAY TEXT — fade out (83% → 88%) ──
+    // Pod 83% ho NEŘÍDÍME — jiné animace ho zobrazují
     const overlayEl = document.getElementById('heroOverlayText');
     if (overlayEl) {
-      const textFadeStart = heroHeight * 0.78;
-      const textFadeEnd   = heroHeight * 0.85;
+      const textFadeStart = heroHeight * 0.83;
+      const textFadeEnd   = heroHeight * 0.88;
       if (scrollY >= textFadeStart && scrollY < textFadeEnd) {
         const p = (scrollY - textFadeStart) / (textFadeEnd - textFadeStart);
         overlayEl.style.opacity = String(1 - p);
@@ -510,11 +510,11 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
       }
     }
 
-    // ── MEDIA WRAPPER — fade out (80% → 92%) ──
+    // ── MEDIA WRAPPER — fade out (85% → 93%) ──
     const mediaEl = document.getElementById('heroMediaWrapper');
     if (mediaEl) {
-      const mediaFadeStart = heroHeight * 0.80;
-      const mediaFadeEnd   = heroHeight * 0.92;
+      const mediaFadeStart = heroHeight * 0.85;
+      const mediaFadeEnd   = heroHeight * 0.93;
       if (scrollY < mediaFadeStart) {
         mediaEl.style.opacity = '1';
       } else if (scrollY < mediaFadeEnd) {
@@ -530,7 +530,7 @@ car3d.loadModel('/models/free_bmw_m3_e30.glb', (progress) => {
   gsap.ticker.add(updateCarState);
 
   // Shared utility functions
-  const HERO_VH_REF = 340;
+  const HERO_VH_REF = 440;
   function smoothstep(t) { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); }
   function lerp(a, b, t) { return a + (b - a) * t; }
 
@@ -818,15 +818,15 @@ expandTl
 
 
 /* ═════════════════════════════════════════════
-   SCROLL: OVERLAY TEXT REVEAL (Phase 2c: 55%→75%)
+   SCROLL: OVERLAY TEXT REVEAL (synced with car: 45%→58%)
    ═════════════════════════════════════════════ */
 const overlayText = document.getElementById('heroOverlayText');
 if (overlayText) {
   gsap.timeline({
     scrollTrigger: {
       trigger: '#hero',
-      start: '60% top',
-      end: '78% top',
+      start: '45% top',
+      end: '58% top',
       scrub: 1,
     }
   })
@@ -929,6 +929,17 @@ window.addEventListener('resize', () => {
   resizeTimer = setTimeout(() => {
     ScrollTrigger.refresh();
   }, 250);
+});
+
+/* ═════════════════════════════════════════════
+   LOAD SAFETY — Refresh ScrollTrigger after full load
+   Fixes race condition where hero text-layer gets
+   switched to absolute before measurements stabilize
+   ═════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  ScrollTrigger.refresh();
+  // Double-tap: fonts/images may settle after load event
+  setTimeout(() => ScrollTrigger.refresh(), 500);
 });
 
 console.log('🚗 Johny Car Detailing — Cinematic Hero v2 loaded');

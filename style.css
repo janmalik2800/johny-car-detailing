@@ -271,7 +271,7 @@ img, video {
 .hero {
   position: relative;
   width: 100%;
-  height: 340vh;
+  height: 440vh;
   background: var(--black);
   overflow: hidden;
 }
@@ -660,7 +660,7 @@ img, video {
 /* Carousel scroll zone — visually identical to .services, provides extra scroll for slow card rotation */
 .services-orbit {
   position: relative;
-  height: 250vh;
+  height: 350vh;
   background: #101010;
   z-index: 2;
 }
